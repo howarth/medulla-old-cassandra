@@ -159,8 +159,13 @@ class AlphaFSDataLocator(basePathString : String) extends FSLocator{
   val dataDirString = "data"
 
   def getFilename(experiment : ExperimentIdentifier, subject : SubjectIdentifier, block : BlockIdentifier,
-                  processSlug : ProcessSlugIdentifier) : Path =
-    Paths.get(recordingParser.combine(experiment)(subject)(block).getIdentifier())
+                  processSlug : ProcessSlugIdentifier) : String = {
+    val ending = processSlug.getIdentifier() match {
+      case "raw" => "raw.fif"
+      case ps : String => Array(ps, "raw.fif").mkString("_")
+    }
+    Array(subject.getIdentifier(), experiment.getIdentifier(), block.getIdentifier(), ending).mkString("_")
+  }
 
   def getExperimentDirectory(experiment : ExperimentIdentifier) : Path = basePath.resolve(experiment.getIdentifier())
 

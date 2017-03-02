@@ -81,7 +81,6 @@ class StimulusEventList(stimuliEvents : IndexedSeq[StimulusEvent]){
 class MatchedStimulusEventList
 
 class RecordingIdentifier(recordingId : String) extends Identifier{
-  println(recordingId)
   val separatorString = "_"
   val components = recordingId.split(separatorString)
   val experiment : String = components(0)
