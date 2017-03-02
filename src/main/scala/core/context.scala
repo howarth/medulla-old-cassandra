@@ -135,11 +135,11 @@ class AlphaFSMetadataContext(basePathString : String) extends MetadataContext {
 }
 
 trait DataContext {
-  def recordingExists(recording : RecordingIdentifier) : Boolean
+  def recordingExists(recording : RecordingIdentifier, processSlug : ProcessSlugIdentifier) : Boolean
 }
 
 trait FSLocator {
-  def getRecordingLocation(recording : RecordingIdentifier) : Path
+  def getRecordingLocation(recording : RecordingIdentifier, processSlug : ProcessSlugIdentifier) : Path
 }
 
 
@@ -156,11 +156,7 @@ object AlphaRecordingIdParser {
 class AlphaFSDataLocator(basePathString : String) extends FSLocator{
   val basePath = Paths.get(basePathString)
   val recordingParser = AlphaRecordingIdParser
-  def getRecordingLocation(recording : RecordingIdentifier, processSlug : ProcessSlugIdentifier) : Path = {
-    val (experiment, subject, block) = AlphaRecordingIdParser.parse(recording)
-    Paths.get(getSubjectDirectory(experiment, subject, processSlug).toString(),
-      getFilename(experiment, subject, block, processSlug).toString())
-  }
+  val dataDirString = "data"
 
   def getFilename(experiment : ExperimentIdentifier, subject : SubjectIdentifier, block : BlockIdentifier,
                   processSlug : ProcessSlugIdentifier) : Path =
@@ -175,9 +171,13 @@ class AlphaFSDataLocator(basePathString : String) extends FSLocator{
                           processSlug: ProcessSlugIdentifier) : Path =
     getProcessedDirectory(experiment, processSlug).resolve(subject.getIdentifier())
 
-  def getRecordingLocation(recording : RecordingIdentifier) : Path = null
+  def getRecordingLocation(recording : RecordingIdentifier, processSlug : ProcessSlugIdentifier) : Path = {
+    val (eid : ExperimentIdentifier, sid : SubjectIdentifier, bid : BlockIdentifier) = AlphaRecordingIdParser.parse(recording)
+    getSubjectDirectory(eid, sid, processSlug).resolve(getFilename(eid,sid,bid,processSlug))
+  }
 }
 
 class FSDataContext(fsLocator : FSLocator) extends DataContext {
-  def recordingExists(recording : RecordingIdentifier) : Boolean = Files.exists(fsLocator.getRecordingLocation(recording))
+  def recordingExists(recording : RecordingIdentifier, processSlug : ProcessSlugIdentifier) : Boolean =
+    Files.exists(fsLocator.getRecordingLocation(recording, processSlug))
 }
