@@ -170,7 +170,7 @@ class AlphaFSDataLocator(basePathString : String) extends FSLocator{
   def getExperimentDirectory(experiment : ExperimentIdentifier) : Path = basePath.resolve(experiment.getIdentifier())
 
   def getProcessedDirectory(experiment : ExperimentIdentifier, processSlug : ProcessSlugIdentifier) : Path =
-    getExperimentDirectory(experiment).resolve(processSlug.getIdentifier())
+    getExperimentDirectory(experiment).resolve(dataDirString).resolve(processSlug.getIdentifier())
 
   def getSubjectDirectory(experiment : ExperimentIdentifier, subject : SubjectIdentifier,
                           processSlug: ProcessSlugIdentifier) : Path =
