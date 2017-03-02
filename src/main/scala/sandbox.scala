@@ -10,4 +10,5 @@ object CheckAllRawDataOnCortex {
   val metaContext = new AlphaFSMetadataContext(metadataBasePathString)
   val allRecordings = metaContext.getAllRecordings()
   val dontExist = allRecordings.filter(!dataContext.recordingExists(_, procSlug))
+  val filenames = dontExist.map(locator.getRecordingLocation(_, procSlug))
 }
