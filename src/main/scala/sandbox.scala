@@ -9,6 +9,7 @@ object CheckAllRawDataOnCortex {
   val procSlug = new ProcessSlugIdentifier("raw")
   val metaContext = new AlphaFSMetadataContext(metadataBasePathString)
   val allRecordings = metaContext.getAllRecordings()
+  val allFilenames = allRecordings.map(locator.getRecordingLocation(_, procSlug))
   val dontExist = allRecordings.filter(!dataContext.recordingExists(_, procSlug))
   val filenames = dontExist.map(locator.getRecordingLocation(_, procSlug))
 }

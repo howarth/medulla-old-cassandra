@@ -75,6 +75,7 @@ class StimulusEvent(stimulus : Stimulus, timestampBD : BigDecimal) extends Event
 }
 
 class StimulusEventList(stimuliEvents : IndexedSeq[StimulusEvent]){
+  def getStimuliEvents() = stimuliEvents
 
 }
 
