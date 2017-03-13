@@ -1,4 +1,5 @@
 *.idea
 *.swp
-target/
+target/*
+target/.*
 project/target
