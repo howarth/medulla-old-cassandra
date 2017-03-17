@@ -5,9 +5,11 @@ import java.nio.file.{Files, Path, Paths}
 import play.api.libs.json._
 
 
-
-
 trait MetadataContext {
+  def getAllRecordingIdentifiers() : List[RecordingIdentifier]
+}
+
+trait MetadataContextWAT {
   def getSubjects(experiment : ExperimentIdentifier) : List[SubjectIdentifier]
   def getExperiments() : List[ExperimentIdentifier]
   def getDataRecordings(experiment: ExperimentIdentifier, subject : SubjectIdentifier) : List[RecordingIdentifier]
@@ -189,7 +191,7 @@ trait DataContext {
   def recordingExists(recording : RecordingIdentifier, processSlug : ProcessSlugIdentifier) : Boolean
 }
 
-trait FSLocator {
+trait FSDataLocator {
   def getRecordingLocation(recording : RecordingIdentifier, processSlug : ProcessSlugIdentifier) : Path
 }
 
@@ -203,7 +205,7 @@ object AlphaRecordingIdParser {
               block: BlockIdentifier) : RecordingIdentifier = new RecordingIdentifier(Array(experiment, subject, block).map(id => id.getIdentifier()).mkString(separator))
 }
 
-class AlphaFSDataLocator(basePathString : String) extends FSLocator{
+class AlphaFSDataLocator(basePathString : String) extends FSDataLocator{
   val basePath = Paths.get(basePathString)
   val recordingParser = AlphaRecordingIdParser
   val dataDirString = "data"
@@ -232,7 +234,7 @@ class AlphaFSDataLocator(basePathString : String) extends FSLocator{
   }
 }
 
-class FSDataContext(fsLocator : FSLocator) extends DataContext {
+class FSDataContext(fsLocator : FSDataLocator) extends DataContext {
   def recordingExists(recording : RecordingIdentifier, processSlug : ProcessSlugIdentifier) : Boolean =
     Files.exists(fsLocator.getRecordingLocation(recording, processSlug))
 }

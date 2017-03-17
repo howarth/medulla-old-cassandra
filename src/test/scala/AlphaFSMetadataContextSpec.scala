@@ -5,7 +5,7 @@ import main.scala.core._
 class AlphaFSMetadataContextSpec extends FlatSpec with Matchers{
 
   val alphaParser = AlphaRecordingIdParser
-  val labmetadataPath = "/Users/dhowarth/work/labmetadata/"
+  val labmetadataPath = "/home/dhowarth/labmetadata/"
   val context = new AlphaFSMetadataContext(labmetadataPath)
   val testingExperiment = new ExperimentIdentifier("testing")
 

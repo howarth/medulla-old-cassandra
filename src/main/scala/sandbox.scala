@@ -7,11 +7,13 @@ object HostnameDependentContext {
   val hostname = InetAddress.getLocalHost.getHostName
   val dataBasePathString = hostname match {
     case "eggss-MacBook-Pro.local" => "/Users/dhowarth/work/db/data"
-    case _ => throw new IllegalArgumentException("Unknown hostname")
+    case "srvtch-linux" => "/home/dhowarth/data/meg"
+    case _ => throw new IllegalArgumentException(s"Unknown hostname $hostname")
   }
   val metadataBasePathString = hostname match {
     case "eggss-MacBook-Pro.local" => "/Users/dhowarth/work/labmetadata"
-    case _ => throw new IllegalArgumentException("Unknown hostname")
+    case "srvtch-linux" => "/home/dhowarth/labmetadata"
+    case _ => throw new IllegalArgumentException(s"Unknown hostname $hostname")
   }
 }
 
@@ -29,6 +31,6 @@ object CheckAllRawData {
   val filenames = dontExist.map(locator.getRecordingLocation(_, procSlug))
 }
 
-object WriteStimuliChannelsToMetadata {
-  def writeListForMNEInput
+class PrepareWriteChannelsToMetadata(dataLocator : FSDataLocator, metaLocator : FSMetaLocator) {
+  def writeFIFFToBinList()
 }
