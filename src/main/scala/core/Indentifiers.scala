@@ -79,7 +79,6 @@ class StimulusEventList(stimuliEvents : IndexedSeq[StimulusEvent]){
 
 }
 
-class MatchedStimulusEventList
 
 class RecordingIdentifier(recordingId : String) extends Identifier{
   val separatorString = "_"
