@@ -1,5 +1,5 @@
 package main.scala.core
-
+/*
 /*
 TODO: Why doesn't this work?
 final class IdDecimal(val bd : BigDecimal, override val mc : MathContext) extends BigDecimal(bd, mc){
@@ -70,7 +70,6 @@ class EventList(events : IndexedSeq[Event])
 class TriggerEvent(triggerValue : Int, timestampBD :BigDecimal) extends Event(timestampBD)
 class TriggerEventList(events : List[TriggerEvent])
 
-
 class StimulusEvent(stimulus : Stimulus, timestampBD : BigDecimal) extends Event(timestampBD){
 }
 
@@ -79,17 +78,30 @@ class StimulusEventList(stimuliEvents : IndexedSeq[StimulusEvent]){
 
 }
 
+class DataIdentifier(dataId : String) extends Identifier{
+  def getIdentifier() = dataId
+}
 
-class RecordingIdentifier(recordingId : String) extends Identifier{
+class RecordingIdentifier(recordingId : String) extends Identifier {
+  override def getIdentifier() = recordingId
+}
+
+trait ESBRecordingIdentifier extends RecordingIdentifier {
+  def getSubject() : SubjectIdentifier
+  def getExperiment() : ExperimentIdentifier
+  def getBlock() : BlockIdentifier
+}
+
+class AlphaESBRecordingIdentifier(recordingId : String) extends RecordingIdentifier(recordingId)
+  with ESBRecordingIdentifier{
   val separatorString = "_"
   val components = recordingId.split(separatorString)
   val experiment : String = components(0)
   val subject : String = components(1)
   val blockId : String = components(2)
-  def getIdentifier() = recordingId
   def getSubject() : String = subject
   def getExperiment() : String =  experiment
-  def getBlockId() : String = blockId
+  def getBlock() : String = blockId
 }
 
 class UEL(recordingId : RecordingIdentifier, timeBD : BigDecimal) extends Identifier {
@@ -104,4 +116,8 @@ class UNL(recId: RecordingIdentifier, startTimeBD : BigDecimal, endTimeBD : BigD
   val endTime = IdUtils.truncatedBigDecimal(endTimeBD)
   val identifier = Array(startTime.toString(), endTime.toString()).mkString(separatorString)
   def getIdentifier() = identifier
+
+
 }
+
+*/

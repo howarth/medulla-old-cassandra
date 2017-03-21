@@ -1,12 +1,22 @@
 package main.scala.core
+/*
 import java.nio.charset.{MalformedInputException, StandardCharsets}
 import java.nio.file.{Files, Path, Paths}
 
 import play.api.libs.json._
 
+trait DataContext {
+  def getAllDataIdentifiers() : List[DataIdentifier]
+}
 
 trait MetadataContext {
-  def getAllRecordingIdentifiers() : List[RecordingIdentifier]
+  def getAllDataIdentifiers() : List[DataIdentifier]
+}
+
+trait ESBMetadataContext extends MetadataContext{
+  def getSubjects(experiment : ExperimentIdentifier) : List[SubjectIdentifier]
+  def getExperiments() : List[ExperimentIdentifier]
+  def getBlocks(experiment : ExperimentIdentifier, subject : SubjectIdentifier)
 }
 
 trait MetadataContextWAT {
@@ -36,7 +46,7 @@ trait MetadataContextWAT {
                                    block : BlockIdentifier) : StimulusEventList
 }
 
-class AlphaFSMetadataContext(basePathString : String) extends MetadataContext {
+class AlphaFileSystemESBMetadataContext(basePathString : String) extends MetadataContext {
   val basePath: Path = Paths.get(basePathString)
   val recordingsDirPath: Path = basePath.resolve(Paths.get("recordings"))
   val experimentsPath: Path = basePath.resolve("experiments.json")
@@ -238,3 +248,4 @@ class FSDataContext(fsLocator : FSDataLocator) extends DataContext {
   def recordingExists(recording : RecordingIdentifier, processSlug : ProcessSlugIdentifier) : Boolean =
     Files.exists(fsLocator.getRecordingLocation(recording, processSlug))
 }
+*/
