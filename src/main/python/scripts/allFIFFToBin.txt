@@ -1,0 +1,1 @@
+/Users/dhowarth/work/db/data/test/data/raw/A/A_test_01_raw.fif /Users/dhowarth/work/db/data/test/bin/raw/A/01/A_test_01_CHANNEL-NAME_raw.bin

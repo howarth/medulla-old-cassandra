@@ -1,6 +1,5 @@
 package main.scala.core
 /*
-/*
 TODO: Why doesn't this work?
 final class IdDecimal(val bd : BigDecimal, override val mc : MathContext) extends BigDecimal(bd, mc){
   def this(bd : BigDecimal) = this(bd, BigDecimal.defaultMathContext)
@@ -17,10 +16,10 @@ object IdUtils{
   }
 }
 
-trait Identifier{
-  def getIdentifier(): String
+trait Id{
+  def getId(): String
 
-  override def toString: String = getIdentifier()
+  override def toString: String = getId()
 
   override def equals(that : Any)  : Boolean = {
     this.getClass == that.getClass && this.toString == that.toString
@@ -29,95 +28,107 @@ trait Identifier{
   override def hashCode(): Int = this.toString.hashCode
 }
 
-class TimeSeriesIdentifier(timeseriesId : String) extends Identifier{
-  def getIdentifier() = timeseriesId
+class TimeSeriesId(timeseriesId : String) extends Id{
+  def getId() = timeseriesId
 }
 
-class SubjectIdentifier(subjectId : String) extends Identifier{
-  def getIdentifier() = subjectId
+class SubjectId(subjectId : String) extends Id{
+  def getId() = subjectId
 }
 
-class ExperimentIdentifier(experimentId : String) extends Identifier{
-  def getIdentifier() = experimentId
+class ExperimentId(experimentId : String) extends Id{
+  def getId() = experimentId
 }
 
-class BlockIdentifier(blockId : String) extends Identifier{
-  def getIdentifier() = blockId
+class BlockId(blockId : String) extends Id{
+  def getId() = blockId
 }
 
-class ProcessSlugIdentifier(processSlugId : String) extends Identifier{
-  def getIdentifier() = processSlugId
+class ProcessSlugId(processSlugId : String) extends Id{
+  def getId() = processSlugId
 }
 
-class StimuliSetIdentifier(stimuliSetId : String) extends Identifier{
-  def getIdentifier() = stimuliSetId
+class StimuliSetId(stimuliSetId : String) extends Id{
+  def getId() = stimuliSetId
 }
 
 class Stimulus(stimulus : String) {
   def getStimulus() = stimulus
 }
 
-class DataChannel(channelName : String){
-  def getName() = channelName
+class RecordingChannelId(channelId : String) extends Id{
+  def getId = channelId
 }
 
-class Event(timestampBD : BigDecimal) {
-  val timestamp = IdUtils.truncatedBigDecimal(timestampBD)
+class Timestamp(timestamp : String) extends Ordered[Timestamp]{
+  private val t : BigDecimal = IdUtils.truncatedBigDecimal(BigDecimal(timestamp))
+  val _underlyingDB : BigDecimal = t
+
+  override def equals(that : Any)  : Boolean = {
+    this.getClass == that.getClass && this.toString == that.toString
+  }
+  override def hashCode(): Int = this.toString.hashCode
+  override def toString: String = t.toString
+
+  override def compare(that: Timestamp) = this.t.compare(that.t)
 }
 
-class EventList(events : IndexedSeq[Event])
-
-class TriggerEvent(triggerValue : Int, timestampBD :BigDecimal) extends Event(timestampBD)
-class TriggerEventList(events : List[TriggerEvent])
-
-class StimulusEvent(stimulus : Stimulus, timestampBD : BigDecimal) extends Event(timestampBD){
+object Timestamp {
+  def apply(timestamp : String) = new Timestamp(timestamp)
 }
 
-class StimulusEventList(stimuliEvents : IndexedSeq[StimulusEvent]){
+class Event(timestamp : Timestamp) {
+  val t = timestamp
+}
+
+class EventVector(events : IndexedSeq[Event])
+
+class TriggerEvent(triggerValue : Int, timestamp : Timestamp) extends Event(timestamp)
+class TriggerEventVector(events : Vector[TriggerEvent])
+
+class StimulusEvent(stimulus : Stimulus, timestamp : Timestamp) extends Event(timestamp){
+}
+
+class StimulusEventVector(stimuliEvents : IndexedSeq[StimulusEvent]){
   def getStimuliEvents() = stimuliEvents
 
 }
 
-class DataIdentifier(dataId : String) extends Identifier{
-  def getIdentifier() = dataId
+class DataId(dataId : String) extends Id{
+  def getId() = dataId
 }
 
-class RecordingIdentifier(recordingId : String) extends Identifier {
-  override def getIdentifier() = recordingId
+class RecordingId(recordingId : String) extends Id {
+  override def getId() = recordingId
 }
 
-trait ESBRecordingIdentifier extends RecordingIdentifier {
-  def getSubject() : SubjectIdentifier
-  def getExperiment() : ExperimentIdentifier
-  def getBlock() : BlockIdentifier
+trait ESBRecordingId extends RecordingId {
+  def getSubject() : SubjectId
+  def getExperiment() : ExperimentId
+  def getBlock() : BlockId
 }
 
-class AlphaESBRecordingIdentifier(recordingId : String) extends RecordingIdentifier(recordingId)
-  with ESBRecordingIdentifier{
+class AlphaESBRecordingId(recordingId : String) extends RecordingId(recordingId)
+  with ESBRecordingId{
   val separatorString = "_"
   val components = recordingId.split(separatorString)
   val experiment : String = components(0)
   val subject : String = components(1)
   val blockId : String = components(2)
-  def getSubject() : String = subject
-  def getExperiment() : String =  experiment
-  def getBlock() : String = blockId
+  def getSubject() : SubjectId = new SubjectId(subject)
+  def getExperiment() : ExperimentId =  new ExperimentId(experiment)
+  def getBlock() : BlockId = new BlockId(blockId)
 }
 
-class UEL(recordingId : RecordingIdentifier, timeBD : BigDecimal) extends Identifier {
+class UEL(recordingId : RecordingId, timestamp : Timestamp) extends Id {
   val separatorString = ":"
-  val time = IdUtils.truncatedBigDecimal(timeBD)
-  def getIdentifier() = Array(recordingId, time.toString()).mkString(separatorString)
+  val t = timestamp
+  def getId() = Array(recordingId, t.toString()).mkString(separatorString)
 }
 
-class UNL(recId: RecordingIdentifier, startTimeBD : BigDecimal, endTimeBD : BigDecimal) extends Identifier{
+class UNL(val recordingId: RecordingId, val startTime : Timestamp, val endTime : Timestamp) extends Id{
   val separatorString = "-"
-  val startTime = IdUtils.truncatedBigDecimal(startTimeBD)
-  val endTime = IdUtils.truncatedBigDecimal(endTimeBD)
   val identifier = Array(startTime.toString(), endTime.toString()).mkString(separatorString)
-  def getIdentifier() = identifier
-
-
+  def getId() = identifier
 }
 
-*/
