@@ -276,8 +276,16 @@ class AlphaBinDataLocator(basePathString : String)  extends AlphaFIFFSDataLocato
   }
 }
 
-trait RecordingDataContext{
-  def recordingExists(recording : RecordingId, processSlug : ProcessSlugId) : Boolean
+trait TimeseriesDataContext{
+  def dataExists(dataId : DataId) : Boolean
+}
+
+trait ReadableChanneledTimeseriesDataContext extends TimeseriesDataContext {
+  def getStartTime(dataId : DataId) : Timestamp
+  def getEndTime(dataId : DataId) : Timestamp
+  def getChannels(dataId : DataId) : Vector[ChannelId]
+  def getChannelData(dataId : DataId, channelId : ChannelId)
+
 }
 
 trait ReadableRecordingDataContext extends RecordingDataContext {
@@ -289,18 +297,10 @@ trait ReadableRecordingDataContext extends RecordingDataContext {
   def getChannelDataFromUNL(unl : UNL, channel : RecordingChannelId) : SingleChannelTimeseries
   def getMultiChannelDataFromUNL( unl : UNL, channels : Vector[RecordingChannelId]) : MultiChannelTimeseries
   def getTimes(recording : RecordingId, processSlug : ProcessSlugId) : Vector[Timestamp]
-  /*
-  def getVector(vectorId : String) : Vector[Double]
-  def get2DMatrix(matrixId : String) : Vector[Vector[Double]]
-  */
 }
 trait WritableRecordingDataContext extends RecordingDataContext {
   def putData( recording : RecordingId, processSlug : ProcessSlugId, data : MultiChannelTimeseries) : Unit
   def putChannelData( recording : RecordingId, processSlug : ProcessSlugId, data : SingleChannelTimeseries) : Unit
-  /*
-  def putVector(vectorId : String, vec : Vector[Double]) : Unit
-  def put2DMatrix(matrixId : String, mat : Vector[Vector[Double]]) : Unit
-  */
 }
 
 abstract class FSDataContext(fsLocator : FSDataLocator) extends ReadableRecordingDataContext {

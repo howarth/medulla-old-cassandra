@@ -1,4 +1,5 @@
 package main.scala.core
+import scala.math._
 /*
 TODO: Why doesn't this work?
 final class IdDecimal(val bd : BigDecimal, override val mc : MathContext) extends BigDecimal(bd, mc){
@@ -16,17 +17,19 @@ object IdUtils{
   }
 }
 
+
 trait Id{
   def getId(): String
-
   override def toString: String = getId()
-
   override def equals(that : Any)  : Boolean = {
     this.getClass == that.getClass && this.toString == that.toString
   }
-
   override def hashCode(): Int = this.toString.hashCode
 }
+
+trait DataId
+trait TimeseriesId
+
 
 class TimeSeriesId(timeseriesId : String) extends Id{
   def getId() = timeseriesId
