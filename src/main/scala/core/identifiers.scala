@@ -1,9 +1,9 @@
 package main.scala.core
+
 /*
 TODO: Why doesn't this work?
 final class IdDecimal(val bd : BigDecimal, override val mc : MathContext) extends BigDecimal(bd, mc){
   def this(bd : BigDecimal) = this(bd, BigDecimal.defaultMathContext)
-
 }
 */
 
@@ -17,83 +17,48 @@ trait Id {
   val id : String
   override def toString: String = this.id
   override def equals(that: Any): Boolean = {
-    this.getClass == that.getClass && this.id == that.id
+    this.getClass == that.getClass && this.toString == that.toString
   }
   override def hashCode(): Int = this.id.hashCode
 }
 
 // Use if String Id becomes more complicated
 // trait StringId(val id: String)
+trait DataId extends Id
+class TimeSeriesId(val id : String) extends DataId
+class SingleChannelTimeSeriesId(val id: String) extends DataId
+class MultiChannelTimeSeriesId(val id: String) extends DataId
+class VectorId(val id : String) extends DataId
+class Matrix2DId(val id : String) extends DataId
 
-class TimeSeriesId(val id: String) extends Id {}
-
-class SubjectId(val id: String) extends Id {}
-
-class ExperimentId(val id: String) extends Id {}
-
-class BlockId(val id: String) extends Id {}
-
+trait MetadataAttrId extends Id
+class SubjectId(val id: String) extends MetadataAttrId
+class ExperimentId(val id: String) extends MetadataAttrId
+class BlockId(val id: String) extends MetadataAttrId
+class Stimulus(val id: String) extends MetadataAttrId
+class StimuliSetId(val id: String) extends MetadataAttrId
 // Preprocessing Readable ID
-class ProcessSlugId(val id: String) extends Id {}
-
-class StimuliSetId(val id: String) extends Id {}
-
-class Stimulus(val id: String) {}
-
-class RecordingChannelId(val id: String) extends Id {}
-
-class DataId(val id: String) extends Id {}
+class ProcessSlugId(val id: String) extends MetadataAttrId
 
 // timeString is string of epoch
-class Timestamp(val timeString: String) extends Ordered[Timestamp] {
-  private val timeDecimal: BigDecimal =
-    IdUtils.truncatedBigDecimal(BigDecimal(timestamp))
-  val _underlyingDB: BigDecimal = t
+class Timestamp(t : BigDecimal) extends Ordered[Timestamp] {
+  val underlyingBD: BigDecimal = IdUtils.truncatedBigDecimal(t)
 
-  override def equals(that: Any): Boolean = {
-    this.getClass == that.getClass && this.toString == that.toString
-  }
-  override def hashCode(): Int = this.timeString.hashCode
-  override def toString: String = this.timeString
-
+  override def equals(that: Any): Boolean = this.getClass == that.getClass && underlyingBD.equals(that)
+  override def hashCode: Int = underlyingBD.hashCode
+  override def toString: String = underlyingBD.toString
   override def compare(that: Timestamp) = {
-    this.timeDecimal.compare(that.timeDecimal)
+    this.underlyingBD.compare(that.underlyingBD)
   }
 }
 
-object Timestamp { 
-  def apply(timeString: String) = new Timestamp(timeString)
+object Timestamp {
+  def apply(timeBigDecimal: BigDecimal) : Timestamp = new Timestamp(timeBigDecimal)
+  def apply(timeString: String) : Timestamp = new Timestamp(BigDecimal(timeString))
 }
 
-class Event(val timestamp: Timestamp) {}
-
-class EventVector(events: IndexedSeq[Event])
-
-class TriggerEvent(val triggerValue: Int, val timestamp: Timestamp)
-  extends Event(timestamp)
-
-class TriggerEventVector(events: Vector[TriggerEvent])
-
-class StimulusEvent(stimulus: Stimulus, timestamp: Timestamp)
-  extends Event(timestamp)
-{}
-
-class StimulusEventVector(val stimuliEvents: IndexedSeq[StimulusEvent]) {}
-
-class RecordingId(val id: String) extends Id {}
-  
-  
-  // How do traits extend when there are constructors
-  // ESB - Experimental Subject block.
-trait ESBRecordingId extends RecordingId(id) {
-  val subjectId : ExperimentId
-  val experimentId : ExperimentID
-  val blockId : BlockId
-  val subjectId : SubjectId
-  val experimentId : ExperimentId
-}
-/
-// / id - string seperated
+/*
+// Move this to a metadata store
 class SimpleESBRecordingId(val id: String)
   extends ESBRecordingId
 {
@@ -130,4 +95,4 @@ class UNL(
     )
   def getId() = identifier
 }
-
+*/

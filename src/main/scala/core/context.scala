@@ -7,10 +7,10 @@ import java.nio.{ByteBuffer, DoubleBuffer, MappedByteBuffer}
 import java.nio.channels.FileChannel
 
 import scala.io.Source
-import scala.util.{Failure, Success}
 import play.api.libs.json._
 import com.outworkers.phantom.dsl._
 
+import scala.util.{Failure, Success}
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 
@@ -59,18 +59,18 @@ class AlphaFileSystemESBMetadataContext(basePathString : String) extends ESBMeta
   val basePath: Path = Paths.get(basePathString)
   val recordingsDirPath: Path = basePath.resolve(Paths.get("recordings"))
   val experimentsPath: Path = basePath.resolve("experiments.json")
-  val recordingsPath = (eid: ExperimentId) => recordingsDirPath.resolve(Array(eid.getId(), ".json").mkString(""))
+  val recordingsPath = (eid: ExperimentId) => recordingsDirPath.resolve(Array(eid.getId, ".json").mkString(""))
   val dataRecordingsKey = "data"
   val otherRecordingsKey = "other"
   val emptyRoomRecordingsKey = "empty_room"
   val eventsDirPath: Path = basePath.resolve("events")
-  val eventsExperimentDirPath: (ExperimentId => Path) = (eid: ExperimentId) => eventsDirPath.resolve(eid.getId())
+  val eventsExperimentDirPath: (ExperimentId => Path) = (eid: ExperimentId) => eventsDirPath.resolve(eid.getId)
   val eventsExperimentSubjectDirPath: (ExperimentId, SubjectId) => Path = (eid, sid) => {
-    eventsExperimentDirPath(eid).resolve(sid.getId())
+    eventsExperimentDirPath(eid).resolve(sid.getId)
   }
   val ptbPath = (eid: ExperimentId, sid: SubjectId, bid: BlockId) => {
     eventsExperimentSubjectDirPath(eid, sid).resolve(
-      Array(sid.getId(), eid.getId(), bid.getId(), "psychtoolbox.txt").mkString("_")
+      Array(sid.getId, eid.getId, bid.getId, "psychtoolbox.txt").mkString("_")
     )
   }
 
@@ -90,7 +90,7 @@ class AlphaFileSystemESBMetadataContext(basePathString : String) extends ESBMeta
 
   def getSubjectRecordings(experiment: ExperimentId, subject: SubjectId, key: String): JsValue =
     loadJson(recordingsPath(experiment)).asOpt[Map[String, JsValue]] match {
-      case Some(sub2recs) => sub2recs(subject.getId()).asOpt[Map[String, JsValue]] match {
+      case Some(sub2recs) => sub2recs(subject.getId).asOpt[Map[String, JsValue]] match {
         case Some(recType2recs) =>
           try {
             recType2recs(key)
@@ -216,11 +216,11 @@ trait FSDataLocator {
 object AlphaRecordingIdParser {
   val separator = "_"
   def parse(recording : RecordingId) : (ExperimentId, SubjectId, BlockId) = {
-    val Array(experiment, subject, block) = recording.getId().split(separator)
+    val Array(experiment, subject, block) = recording.getId.split(separator)
     (new ExperimentId(experiment), new SubjectId(subject), new BlockId(block))
   }
   def combine(experiment : ExperimentId)(subject : SubjectId)(
-              block: BlockId) : RecordingId = new RecordingId(Array(experiment, subject, block).map(id => id.getId()).mkString(separator))
+              block: BlockId) : RecordingId = new RecordingId(Array(experiment, subject, block).map(id => id.getId).mkString(separator))
 }
 
 class AlphaFIFFSDataLocator(basePathString : String) extends FSDataLocator{
@@ -230,21 +230,21 @@ class AlphaFIFFSDataLocator(basePathString : String) extends FSDataLocator{
 
   def getFilename(experiment : ExperimentId, subject : SubjectId, block : BlockId,
                   processSlug : ProcessSlugId) : String = {
-    val ending = processSlug.getId() match {
+    val ending = processSlug.getId match {
       case "raw" => "raw.fif"
       case ps : String => Array(ps, "raw.fif").mkString("_")
     }
-    Array(subject.getId(), experiment.getId(), block.getId(), ending).mkString("_")
+    Array(subject.getId, experiment.getId, block.getId, ending).mkString("_")
   }
 
-  def getExperimentDirectory(experiment : ExperimentId) : Path = basePath.resolve(experiment.getId())
+  def getExperimentDirectory(experiment : ExperimentId) : Path = basePath.resolve(experiment.getId)
 
   def getProcessedDirectory(experiment : ExperimentId, processSlug : ProcessSlugId) : Path =
-    getExperimentDirectory(experiment).resolve(dataDirString).resolve(processSlug.getId())
+    getExperimentDirectory(experiment).resolve(dataDirString).resolve(processSlug.getId)
 
   def getSubjectDirectory(experiment : ExperimentId, subject : SubjectId,
                           processSlug: ProcessSlugId) : Path =
-    getProcessedDirectory(experiment, processSlug).resolve(subject.getId())
+    getProcessedDirectory(experiment, processSlug).resolve(subject.getId)
 
   def getRecordingLocation(recording : RecordingId, processSlug : ProcessSlugId) : Path = {
     val (eid : ExperimentId, sid : SubjectId, bid : BlockId) = AlphaRecordingIdParser.parse(recording)
@@ -262,8 +262,8 @@ class AlphaBinDataLocator(basePathString : String)  extends AlphaFIFFSDataLocato
 
   def getFilename(experiment : ExperimentId, subject : SubjectId, block : BlockId,
                            processSlug : ProcessSlugId, channel: RecordingChannelId) : String = {
-    val ending = Array(processSlug.getId(), ".bin").mkString
-    Array(subject.getId(), experiment.getId(), block.getId(), channel.getId, ending).mkString("_")
+    val ending = Array(processSlug.getId, ".bin").mkString
+    Array(subject.getId, experiment.getId, block.getId, channel.getId, ending).mkString("_")
   }
 
   override def getRecordingLocation(recording : RecordingId, processSlug : ProcessSlugId) : Path =
@@ -272,7 +272,7 @@ class AlphaBinDataLocator(basePathString : String)  extends AlphaFIFFSDataLocato
   override def getRecordingChannelLocation(recording : RecordingId, processSlug : ProcessSlugId,
                                   channel : RecordingChannelId) : Path = {
     val (eid : ExperimentId, sid : SubjectId, bid : BlockId) = AlphaRecordingIdParser.parse(recording)
-    getSubjectDirectory(eid, sid, processSlug).resolve(bid.getId()).resolve(getFilename(eid,sid,bid,processSlug, channel))
+    getSubjectDirectory(eid, sid, processSlug).resolve(bid.getId).resolve(getFilename(eid,sid,bid,processSlug, channel))
   }
 }
 
@@ -446,20 +446,21 @@ class TimestampsTable extends CassandraTable[TimestampsTable, TimestampsRecord] 
   object times extends ListColumn[BigDecimal](this)
 }
 
-case class VectorData(vector_id : String, vector_data: List[Double])
-class VectorTable extends CassandraTable[VectorTable, VectorData]{
+case class VectorDataRow(vector_id : String, vector_data: List[Double])
+class VectorTable extends CassandraTable[VectorTable, VectorDataRow]{
   override val tableName = "vector_data"
   object vector_id extends StringColumn(this) with PartitionKey
   object vector_data extends ListColumn[Double](this)
 }
 
-case class Matrix2DData(matrix_id : String, matrix_data : List[List[Double]])
-class Matrix2DTable extends CassandraTable[Matrix2DTable, Matrix2DData]{
+case class Matrix2DDataRow(matrix_id : String, matrix_data : List[List[Double]])
+class Matrix2DTable extends CassandraTable[Matrix2DTable, Matrix2DDataRow]{
   override val tableName = "matrix2D_data"
   object matrix_id extends StringColumn(this) with PartitionKey
   object matrix_data extends ListColumn[List[Double]](this)
 }
 
+/*
 class CassPhantomDatabase(override val connector : KeySpaceDef) extends Database[CassPhantomDatabase](connector) {
 
   object timeBoundsT extends TimeBoundsTable with connector.Connector
@@ -647,7 +648,7 @@ class CassandraRecordingDataContext(hosts : Seq[String], keySpace: String) exten
   def getMultiChannelDataFromUNL( unl : UNL, channels : Vector[RecordingChannelId]) : MultiChannelTimeseries = throw new NotImplementedError()
 
   def getTimes(recording : RecordingId, processSlug : ProcessSlugId) : Vector[Timestamp] = {
-    db.getTimes(recording.getId())
+    db.getTimes(recording.getId)
   }
 
   def putChannelData( recording : RecordingId, processSlug : ProcessSlugId, data : SingleChannelTimeseries) : Unit = {
@@ -664,3 +665,5 @@ class CassandraRecordingDataContext(hosts : Seq[String], keySpace: String) exten
     db.putVector(vecId , vec)
 */
 }
+
+*/
