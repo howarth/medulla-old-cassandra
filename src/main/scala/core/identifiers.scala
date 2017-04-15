@@ -6,7 +6,6 @@ final class IdDecimal(val bd : BigDecimal, override val mc : MathContext) extend
   def this(bd : BigDecimal) = this(bd, BigDecimal.defaultMathContext)
 }
 */
-
 object IdUtils {
   def truncatedBigDecimal(bd: BigDecimal): BigDecimal = {
     BigDecimal(bd.underlying.stripTrailingZeros())
@@ -26,8 +25,10 @@ trait Id {
 // trait StringId(val id: String)
 trait DataId extends Id
 class TimeSeriesId(val id : String) extends DataId
+class TimeSeriesChannelId( val id : String) extends DataId
 class SingleChannelTimeSeriesId(val id: String) extends DataId
 class MultiChannelTimeSeriesId(val id: String) extends DataId
+class ScalarId(val id : String) extends DataId
 class VectorId(val id : String) extends DataId
 class Matrix2DId(val id : String) extends DataId
 

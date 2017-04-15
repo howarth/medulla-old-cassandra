@@ -1,5 +1,4 @@
 package main.scala.store
-u
 
 
 import main.scala.core._
@@ -20,6 +19,18 @@ and then implement
 get[Matrix2D][Double]
 and then not write as much?
 */
+
+/*
+  Scalars
+ */
+trait ScalarStore[T]
+trait ScalarReadableDataStore[T] extends ScalarStore[T] with ReadableDataStore{
+  def getScalar[T](id : ScalarId): ScalarData[T]
+}
+trait ScalarWritableDataStore[T] extends ScalarStore[T] with WritableDataStore{
+  def putScalar[T](id : ScalarId, data : ScalarData[T]) : Unit
+}
+trait ScalarRWDataStore[T] extends ScalarReadableDataStore[T] with ScalarWritableDataStore[T]
 
 /*
   Vectors
@@ -56,7 +67,7 @@ trait TimeSeriesWritableDataStore[T] extends WritableDataStore {
 }
 trait TimeSeriesRWDataStore[T] extends TimeSeriesReadableDataStore[T] with TimeSeriesWritableDataStore[T]
 
-trait SingleChannelTimeSeriesReadableDataStore[T] extends WritableDataStore{
+trait SingleChannelTimeSeriesReadableDataStore[T] extends WritableDataStore {
   def getSingleChannelTimeSeries[T](id : SingleChannelTimeSeriesId): SingleChannelTimeSeriesData[T]
 }
 trait SingleChannelTimeSeriesWritableDataStore[T] extends {
@@ -65,7 +76,6 @@ trait SingleChannelTimeSeriesWritableDataStore[T] extends {
 trait SingleChannelTimeSeriesRWDataStore[T] extends
   SingleChannelTimeSeriesReadableDataStore[T] with
   SingleChannelTimeSeriesWritableDataStore[T]
-
 
 trait MultiChannelTimeSeriesReadableDataStore[T] extends ReadableDataStore {
   def getMultiChannelTimeSeriesStore[T](id: MultiChannelTimeSeriesId): MultiChannelTimeSeriesData[T]

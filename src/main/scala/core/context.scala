@@ -18,6 +18,7 @@ trait FileType {}
 object FIFFFileType extends FileType
 object BinFileType extends FileType
 
+/*
 
 trait MetadataContext {
   def getAllRecordings() : Vector[RecordingId]
@@ -382,83 +383,8 @@ class BinDataContext(fsLocator : BinFSDataLocator) extends FSDataContext(fsLocat
   }
 }
 
-case class ChannelsRecord(recording_id  : String, channel_names: List[String])
-class ChannelsTable extends CassandraTable[ChannelsTable, ChannelsRecord] {
-  override val tableName = "channels"
-  object recording_id extends StringColumn(this) with PartitionKey
-  object channel_names extends ListColumn[String](this)
-}
-
-case class RecordingRecord(recording_id : String, process_slug : String)
-class RecordingsTable extends CassandraTable[RecordingsTable, RecordingRecord] {
-  override val tableName = "recordings"
-  object recording_id extends StringColumn(this) with PartitionKey
-  object process_slug extends StringColumn(this) with PrimaryKey
-}
-/*
-create table if not exists recording_data(
-  recording_id text,
-  timestamp decimal,
-  process_slug text,
-  channel_name text,
-  value double,
-  PRIMARY KEY (recording_id, process_slug, channel_name, timestamp) ,
- ) WITH CLUSTERING ORDER BY (process_slug asc, channel_name asc, timestamp asc);
 */
 
-case class RecordingDataRecord(
-  recording_id : String,
-  timestamp : BigDecimal,
-  process_slug : String,
-  channel_name : String,
-  value: Double)
-
-class RecordingDataTable extends CassandraTable[RecordingDataTable, RecordingDataRecord] {
-  override val tableName = "recording_data"
-  object recording_id extends StringColumn(this) with PartitionKey
-  object timestamp extends BigDecimalColumn(this) with PrimaryKey with ClusteringOrder with Ascending
-  object process_slug extends StringColumn(this) with PrimaryKey with ClusteringOrder with Ascending
-  object channel_name extends StringColumn(this) with PrimaryKey with ClusteringOrder with Ascending
-  object value extends DoubleColumn(this)
-}
-
-/*
-create table if not exists time_bounds(
-recording_id text,
-start_time decimal,
-end_time decimal,
-PRIMARY KEY(recording_id));
-*/
-
-case class TimeBoundsRecord(recording_id : String, start_time : BigDecimal, end_time : BigDecimal)
-class TimeBoundsTable extends CassandraTable[TimeBoundsTable, TimeBoundsRecord]{
-  override val tableName = "time_bounds"
-  object recording_id extends StringColumn(this) with PartitionKey
-  object start_time extends BigDecimalColumn(this)
-  object end_time extends BigDecimalColumn(this)
-
-}
-
-case class TimestampsRecord(recording_id : String, times : List[BigDecimal])
-class TimestampsTable extends CassandraTable[TimestampsTable, TimestampsRecord] {
-  override val tableName = "timestamps"
-  object recording_id extends StringColumn(this) with PartitionKey
-  object times extends ListColumn[BigDecimal](this)
-}
-
-case class VectorDataRow(vector_id : String, vector_data: List[Double])
-class VectorTable extends CassandraTable[VectorTable, VectorDataRow]{
-  override val tableName = "vector_data"
-  object vector_id extends StringColumn(this) with PartitionKey
-  object vector_data extends ListColumn[Double](this)
-}
-
-case class Matrix2DDataRow(matrix_id : String, matrix_data : List[List[Double]])
-class Matrix2DTable extends CassandraTable[Matrix2DTable, Matrix2DDataRow]{
-  override val tableName = "matrix2D_data"
-  object matrix_id extends StringColumn(this) with PartitionKey
-  object matrix_data extends ListColumn[List[Double]](this)
-}
 
 /*
 class CassPhantomDatabase(override val connector : KeySpaceDef) extends Database[CassPhantomDatabase](connector) {

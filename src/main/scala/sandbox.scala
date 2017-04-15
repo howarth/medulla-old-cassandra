@@ -4,6 +4,8 @@ import java.net.InetAddress
 import java.nio.file.{Path,Paths,Files}
 
 
+/*
+
 object HostnameDependentContext {
   val hostname = InetAddress.getLocalHost.getHostName
   val dataBasePathString = hostname match {
@@ -93,5 +95,6 @@ class CopyTestDataBinToCass(hosts : Seq[String], keySpace : String){
 
 }
 
+*/
 
 //424.999
