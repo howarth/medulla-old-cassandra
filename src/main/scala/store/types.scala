@@ -25,22 +25,23 @@ and then not write as much?
  */
 trait ScalarStore[T]
 trait ScalarReadableDataStore[T] extends ScalarStore[T] with ReadableDataStore{
-  def getScalar[T](id : ScalarId): ScalarData[T]
+  def getScalar(id : ScalarId): ScalarData[T]
 }
 trait ScalarWritableDataStore[T] extends ScalarStore[T] with WritableDataStore{
-  def putScalar[T](id : ScalarId, data : ScalarData[T]) : Unit
+  def putScalar(id : ScalarId, data : ScalarData[T]) : Unit
 }
 trait ScalarRWDataStore[T] extends ScalarReadableDataStore[T] with ScalarWritableDataStore[T]
+
 
 /*
   Vectors
   */
 trait VectorStore[T]
 trait VectorReadableDataStore[T] extends VectorStore[T] with ReadableDataStore{
-  def getVector[T](id : VectorId): VectorData[T]
+  def getVector(id : VectorId): VectorData[T]
 }
 trait VectorWritableDataStore[T] extends VectorStore[T] with WritableDataStore{
-  def putVector[T](id : VectorId, data : VectorData[T]) : Unit
+  def putVector(id : VectorId, data : VectorData[T]) : Unit
 }
 trait VectorRWDataStore[T] extends VectorReadableDataStore[T] with VectorWritableDataStore[T]
 
@@ -49,10 +50,10 @@ trait VectorRWDataStore[T] extends VectorReadableDataStore[T] with VectorWritabl
  */
 trait Matrix2DStore[T]
 trait Matrix2DReadableDataStore[T] extends Matrix2DStore[T] with ReadableDataStore{
-  def getMatrix2D[T](id : Matrix2DId) : Matrix2DData[T]
+  def getMatrix2D(id : Matrix2DId) : Matrix2DData[T]
 }
 trait Matrix2DWritableDataStore[T] extends Matrix2DStore[T] with WritableDataStore{
-  def putMatrix2D[T](id : Matrix2DId, data : Matrix2DData[T]) : Unit
+  def putMatrix2D(id : Matrix2DId, data : Matrix2DData[T]) : Unit
 }
 trait Matrix2DRWDataStore[T] extends Matrix2DWritableDataStore[T] with Matrix2DReadableDataStore[T]
 
@@ -60,28 +61,28 @@ trait Matrix2DRWDataStore[T] extends Matrix2DWritableDataStore[T] with Matrix2DR
  TimeSeries
  */
 trait TimeSeriesReadableDataStore[T] extends ReadableDataStore {
-  def getTimeSeries[T](id : TimeSeriesId) : TimeSeriesData[T]
+  def getTimeSeries(id : TimeSeriesId) : TimeSeriesData[T]
 }
 trait TimeSeriesWritableDataStore[T] extends WritableDataStore {
-  def putTimeSeries[T](id : TimeSeriesId, data : TimeSeriesData[T]) : Unit
+  def putTimeSeries(id : TimeSeriesId, data : TimeSeriesData[T]) : Unit
 }
 trait TimeSeriesRWDataStore[T] extends TimeSeriesReadableDataStore[T] with TimeSeriesWritableDataStore[T]
 
 trait SingleChannelTimeSeriesReadableDataStore[T] extends WritableDataStore {
-  def getSingleChannelTimeSeries[T](id : SingleChannelTimeSeriesId): SingleChannelTimeSeriesData[T]
+  def getSingleChannelTimeSeries(id : SingleChannelTimeSeriesId): SingleChannelTimeSeriesData[T]
 }
 trait SingleChannelTimeSeriesWritableDataStore[T] extends {
-  def putSingleChannelTimeSeries[T](id : SingleChannelTimeSeriesId, data : SingleChannelTimeSeriesData[T]) : Unit
+  def putSingleChannelTimeSeries(id : SingleChannelTimeSeriesId, data : SingleChannelTimeSeriesData[T]) : Unit
 }
 trait SingleChannelTimeSeriesRWDataStore[T] extends
   SingleChannelTimeSeriesReadableDataStore[T] with
   SingleChannelTimeSeriesWritableDataStore[T]
 
 trait MultiChannelTimeSeriesReadableDataStore[T] extends ReadableDataStore {
-  def getMultiChannelTimeSeriesStore[T](id: MultiChannelTimeSeriesId): MultiChannelTimeSeriesData[T]
+  def getMultiChannelTimeSeriesStore(id: MultiChannelTimeSeriesId): MultiChannelTimeSeriesData[T]
 }
 trait MultiChannelTimeSeriesWritableDataStore[T] extends WritableDataStore {
-  def getMultiChannelTimeSeriesStore[T](id: MultiChannelTimeSeriesId, data : MultiChannelTimeSeriesData[T] ): Unit
+  def putMultiChannelTimeSeriesStore(id: MultiChannelTimeSeriesId, data : MultiChannelTimeSeriesData[T] ): Unit
 }
 trait MultiChannelTimeSeriesRWDataStore[T] extends
   MultiChannelTimeSeriesReadableDataStore[T] with

@@ -32,6 +32,10 @@ class ScalarId(val id : String) extends DataId
 class VectorId(val id : String) extends DataId
 class Matrix2DId(val id : String) extends DataId
 
+object ScalarId{def apply(id: String) = new ScalarId(id)}
+object VectorId{def apply(id: String) = new VectorId(id)}
+object Matrix2DId{def apply(id: String) = new Matrix2DId(id)}
+
 trait MetadataAttrId extends Id
 class SubjectId(val id: String) extends MetadataAttrId
 class ExperimentId(val id: String) extends MetadataAttrId

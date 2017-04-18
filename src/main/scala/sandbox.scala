@@ -1,8 +1,29 @@
 package main.scala.sandbox
+import main.scala.store._
 import main.scala.core._
+import scala.util.Random
 import java.net.InetAddress
 import java.nio.file.{Path,Paths,Files}
 
+class SimpleCassandraStoreTest(hosts : Seq[String], keySpace : String){
+  val rand = new Random(42)
+  val cassStore = new CassandraStore(hosts, keySpace)
+  val testScalars : IndexedSeq[Double] = (-10 to 20).map(_.toDouble).map(_ + .05)
+  for(tc <- testScalars){
+    cassStore.putScalar(ScalarId(tc.toString), DoubleScalarData(tc))
+  }
+  for(tc <- testScalars){
+    assert(tc == cassStore.getScalar(ScalarId(tc.toString)))
+  }
+
+  val testVectors : Vector[Vector[Double]] = Vector.fill(100)(Vector.fill(rand.nextInt(100))(rand.nextDouble))
+  for ((tv,i) <- testVectors.zipWithIndex) {
+    cassStore.putVector(VectorId(i.toString), DoubleVectorData(tv))
+  }
+  for ((tv,i) <- testVectors.zipWithIndex) {
+    assert(tv == cassStore.getVector(VectorId(i.toString)))
+  }
+}
 
 /*
 

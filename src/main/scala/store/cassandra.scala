@@ -15,18 +15,21 @@ class CassandraStore(hosts : Seq[String], keySpaceString : String) extends
   val connector : KeySpaceDef = ContactPoint.local.noHeartbeat().keySpace(keySpaceString)
   val db = new CassPhantomDatabase(connector)
 
-  override def putScalar[Double](id: ScalarId, data: ScalarData[Double]) = db.putScalar[Double](id.id, data.data)
-  override def getScalar[Double](id: ScalarId) : ScalarData[Double] = DoubleScalarData(db.getScalar[Double](id.id))
+  override def putScalar(id: ScalarId, data: ScalarData[Double]) = db.putDoubleScalar(id.id, data.data)
+  override def getScalar(id: ScalarId) : ScalarData[Double] = DoubleScalarData(db.getDoubleScalar(id.id))
 
-  override def putVector[Double](id: VectorId, data: VectorData[Double]) = db.putVector[Double](id.id, data.data)
-  override def getVector[Double](id: VectorId) = DoubleVectorData(db.getVector[Double](id.id))
+  override def putVector(id: VectorId, data: VectorData[Double]) = db.putDoubleVector(id.id, data.data)
+  override def getVector(id: VectorId) = DoubleVectorData(db.getDoubleVector(id.id))
 
-  override def getMatrix2D[Double](id: Matrix2DId) = DoubleMatrixData(db.getMatrix2D[Double](id.id))
-  override def putMatrix2D[Double](id: Matrix2DId, data: Matrix2DData[Double]) = db.putMatrix2D[Double](id.id, data.data)
+  override def getMatrix2D(id: Matrix2DId) = DoubleMatrix2DData(db.getDoubleMatrix2D(id.id))
+  override def putMatrix2D(id: Matrix2DId, data: Matrix2DData[Double]) = db.putDoubleMatrix2D(id.id, data.data)
 
-  override def getSingleChannelTimeSeries[Double](id: SingleChannelTimeSeriesId) = throw new NotImplementedError
-  override def putSingleChannelTimeSeries[Double](id: SingleChannelTimeSeriesId,
+  override def getSingleChannelTimeSeries(id: SingleChannelTimeSeriesId) = throw new NotImplementedError
+  override def putSingleChannelTimeSeries(id: SingleChannelTimeSeriesId,
     data : SingleChannelTimeSeriesData[Double]) = throw new NotImplementedError
+
+  override def getMultiChannelTimeSeriesStore(id: MultiChannelTimeSeriesId) = throw new NotImplementedError
+  override def putMultiChannelTimeSeriesStore(id: MultiChannelTimeSeriesId, data: MultiChannelTimeSeriesData[Double]) = ???
 }
 
 /*
@@ -247,7 +250,7 @@ class CassPhantomDatabase(override val connector : KeySpaceDef) extends Database
     Vector.tabulate[Double](resultRows.size()){ri => doubleChanneledTimeSeriesDataT.fromRow(resultRows.get(ri)).value}
   }
 
-  def getScalar[Double](id : String) : Double = {
+  def getDoubleScalar(id : String) : Double = {
     val future = doubleScalarDataT.select.where(_.id eqs id).future()
     val resultRows = Await.result(future, 10 seconds).all()
     if (resultRows.size() > 1) {
@@ -259,14 +262,14 @@ class CassPhantomDatabase(override val connector : KeySpaceDef) extends Database
     doubleScalarDataT.fromRow(resultRows.get(0)).data
   }
 
-  def putScalar[Double](id : String, data : Double) : Unit = {
-    val ins = doubleScalarDataT.insert().value(_.id, id).value(_.data, data).future().onComplete {
+  def putDoubleScalar(id : String, scalar : Double) : Unit = {
+    val ins = doubleScalarDataT.insert().value(_.id, id).value(_.data, scalar).future().onComplete {
       case Success(e) => ()
       case Failure(e) => throw e
     }
   }
 
-  def getVector[Double](id: String) : Vector[Double]= {
+  def getDoubleVector(id: String) : Vector[Double]= {
     val future = doubleVectorDataT.select.where(_.id eqs id).future()
     val resultRows = Await.result(future, 10 seconds).all()
     if (resultRows.size() > 1) {
@@ -279,14 +282,14 @@ class CassPhantomDatabase(override val connector : KeySpaceDef) extends Database
     vec.toVector
   }
 
-  def putVector[Double](id : String, vec : Vector[Double]) = {
+  def putDoubleVector(id : String, vec : Vector[Double]) = {
     val ins = doubleVectorDataT.insert().value(_.id, id).value(_.data, vec.toList).future().onComplete {
       case Success(e) => ()
       case Failure(e) => throw e
     }
   }
 
-  def getMatrix2D[Double](id: String) : Vector[Vector[Double]]= {
+  def getDoubleMatrix2D(id: String) : Vector[Vector[Double]]= {
     val future = doubleMatrix2DDataT.select.where(_.id eqs id).future()
     val resultRows = Await.result(future, 10 seconds).all()
     if (resultRows.size() > 1) {
@@ -296,18 +299,18 @@ class CassPhantomDatabase(override val connector : KeySpaceDef) extends Database
       throw new Exception(s"Expected a matrix for matrix id $id")
     }
     val data : Vector[Double] = doubleMatrix2DDataT.fromRow(resultRows.get(0)).data.toVector
-    val firstDim : Int = Int(data(0))
-    val secondDim : Int = Int(data(1))
-    Vector(Range(0,firstDim-1)).map(i => data.slice(2+(i*secondDim), 2+(i*secondDim)+secondDim))
+    val firstDim : Int = data(0).toInt
+    val secondDim : Int = data(1).toInt
+    (0 to (firstDim-1)).map(i => data.slice(2+(i*secondDim), 2+(i*secondDim)+secondDim)).toVector
   }
 
-  def putMatrix2D[Double](id : String, matrix : Vector[Vector[Double]]) = {
+  def putDoubleMatrix2D(id : String, matrix : Vector[Vector[Double]]) = {
     val firstDim = matrix.length
     val secondDim = matrix(0).length
-    val dbData : List[Double] = List(firstDim, secondDim) ++ matrix.flatten.toList
+    val dbData : List[Double] = List(firstDim.toDouble, secondDim.toDouble) ++ matrix.flatten.toList
     val ins = doubleMatrix2DDataT.insert()
       .value(_.id, id)
-      .value(_.data, matrix).future().onComplete {
+      .value(_.data, dbData).future().onComplete {
       case Success(e) => ()
       case Failure(e) => throw e
     }
