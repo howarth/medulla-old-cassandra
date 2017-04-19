@@ -13,15 +13,27 @@ class SimpleCassandraStoreTest(hosts : Seq[String], keySpace : String){
     cassStore.putScalar(ScalarId(tc.toString), DoubleScalarData(tc))
   }
   for(tc <- testScalars){
-    assert(tc == cassStore.getScalar(ScalarId(tc.toString)))
+    assert(tc == cassStore.getScalar(ScalarId(tc.toString)).data)
   }
 
-  val testVectors : Vector[Vector[Double]] = Vector.fill(100)(Vector.fill(rand.nextInt(100))(rand.nextDouble))
+  val testVectors : Vector[Vector[Double]] =Vector.fill(100)(Vector.fill(rand.nextInt(100))(rand.nextDouble))
   for ((tv,i) <- testVectors.zipWithIndex) {
     cassStore.putVector(VectorId(i.toString), DoubleVectorData(tv))
   }
   for ((tv,i) <- testVectors.zipWithIndex) {
-    assert(tv == cassStore.getVector(VectorId(i.toString)))
+    assert(tv == cassStore.getVector(VectorId(i.toString)).data)
+  }
+
+  val testMatrices : Vector[Vector[Vector[Double]]] = Vector.fill(10)(
+    Vector.fill(100)(
+      Vector.fill(100)(rand.nextDouble)
+    )
+  )
+  for ((tm, i) <- testMatrices.zipWithIndex){
+    cassStore.putMatrix2D(Matrix2DId(i.toString), DoubleMatrix2DData(tm))
+  }
+  for ((tm, i) <- testMatrices.zipWithIndex){
+    assert(tm == cassStore.getMatrix2D(Matrix2DId(i.toString)).data)
   }
 }
 
