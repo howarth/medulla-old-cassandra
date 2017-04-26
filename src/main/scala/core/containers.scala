@@ -25,7 +25,7 @@ class TimeSeriesData[T](val data : Vector[T]) extends Data
 
 class SingleChannelTimeSeriesData[T](val data : Vector[T], val times : Vector[Timestamp], val channel : TimeSeriesChannelId) extends Data {
 }
-object DoubleSingleChannelTimeSeries {
+object DoubleSingleChannelTimeSeriesData {
   def apply(data : Vector[Double], times : Vector[Timestamp], channel : TimeSeriesChannelId) =
     new SingleChannelTimeSeriesData[Double](data, times, channel)
 }
@@ -43,4 +43,8 @@ class MultiChannelTimeSeriesData[T](
     }
     new SingleChannelTimeSeriesData[T](data(ind), times, channel)
   }
+}
+object DoubleMultiChannelTimeSeriesData {
+  def apply(data : Vector[Vector[Double]], times : Vector[Timestamp], channels : Vector[TimeSeriesChannelId]) =
+    new MultiChannelTimeSeriesData[Double](data, times, channels)
 }

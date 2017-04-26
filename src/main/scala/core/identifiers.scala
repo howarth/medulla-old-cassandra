@@ -26,8 +26,8 @@ trait Id {
 trait DataId extends Id
 class TimeSeriesId(val id : String) extends DataId
 class TimeSeriesChannelId( val id : String) extends DataId
-class SingleChannelTimeSeriesId(val id: String) extends DataId
-class MultiChannelTimeSeriesId(val id: String) extends DataId
+class SingleChannelTimeSeriesId(id: String) extends TimeSeriesId(id)
+class MultiChannelTimeSeriesId(id: String) extends TimeSeriesId(id)
 class ScalarId(val id : String) extends DataId
 class VectorId(val id : String) extends DataId
 class Matrix2DId(val id : String) extends DataId
@@ -35,6 +35,9 @@ class Matrix2DId(val id : String) extends DataId
 object ScalarId{def apply(id: String) = new ScalarId(id)}
 object VectorId{def apply(id: String) = new VectorId(id)}
 object Matrix2DId{def apply(id: String) = new Matrix2DId(id)}
+object TimeSeriesChannelId{def apply(id: String) = new TimeSeriesChannelId(id)}
+object SingleChannelTimeSeriesId{def apply(id: String) = new SingleChannelTimeSeriesId(id)}
+object MultiChannelTimeSeriesId{def apply(id: String) = new MultiChannelTimeSeriesId(id)}
 
 trait MetadataAttrId extends Id
 class SubjectId(val id: String) extends MetadataAttrId
@@ -49,7 +52,10 @@ class ProcessSlugId(val id: String) extends MetadataAttrId
 class Timestamp(t : BigDecimal) extends Ordered[Timestamp] {
   val underlyingBD: BigDecimal = IdUtils.truncatedBigDecimal(t)
 
-  override def equals(that: Any): Boolean = this.getClass == that.getClass && underlyingBD.equals(that)
+  override def equals(that: Any): Boolean = that match {
+    case that: Timestamp => underlyingBD equals that.underlyingBD
+    case _ => false
+  }
   override def hashCode: Int = underlyingBD.hashCode
   override def toString: String = underlyingBD.toString
   override def compare(that: Timestamp) = {

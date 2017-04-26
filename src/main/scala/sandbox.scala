@@ -16,7 +16,7 @@ class SimpleCassandraStoreTest(hosts : Seq[String], keySpace : String){
     assert(tc == cassStore.getScalar(ScalarId(tc.toString)).data)
   }
 
-  val testVectors : Vector[Vector[Double]] =Vector.fill(100)(Vector.fill(rand.nextInt(100))(rand.nextDouble))
+  val testVectors : Vector[Vector[Double]] = Vector.fill(100)(Vector.fill(rand.nextInt(100))(rand.nextDouble))
   for ((tv,i) <- testVectors.zipWithIndex) {
     cassStore.putVector(VectorId(i.toString), DoubleVectorData(tv))
   }
@@ -35,7 +35,32 @@ class SimpleCassandraStoreTest(hosts : Seq[String], keySpace : String){
   for ((tm, i) <- testMatrices.zipWithIndex){
     assert(tm == cassStore.getMatrix2D(Matrix2DId(i.toString)).data)
   }
+
+  for ((tv,i) <- testVectors.zipWithIndex) {
+    cassStore.putSingleChannelTimeSeries(SingleChannelTimeSeriesId(i.toString),
+      DoubleSingleChannelTimeSeriesData(tv, (0 to tv.length).map(t => Timestamp(t.toString)).toVector,
+        TimeSeriesChannelId(i.toString)))
+  }
+  for ((tv,i) <- testVectors.zipWithIndex) {
+    val scts : SingleChannelTimeSeriesData[Double] = cassStore.getSingleChannelTimeSeries(SingleChannelTimeSeriesId(i.toString))
+    assert(scts.channel.id == i.toString)
+    assert(scts.times == (0 to tv.length).map(t => Timestamp(t.toString)).toVector)
+    assert(scts.data == tv)
+  }
+
+  for ((tm,i) <- testMatrices.zipWithIndex) {
+    cassStore.putMultiChannelTimeSeries(MultiChannelTimeSeriesId(i.toString),
+      DoubleMultiChannelTimeSeriesData(tm, (0 to tm(0).length).map(t => Timestamp(t.toString)).toVector,
+        TimeSeriesChannelId(i.toString)))
+  }
+  for ((tm,i) <- testMatrices.zipWithIndex) {
+    val mcts : MultiChannelTimeSeriesData[Double] = cassStore.getMultiChannelTimeSeries(MultiChannelTimeSeriesId(i.toString))
+    assert(mcts.channel.id == i.toString)
+    assert(mcts.times == (0 to tm(0).length).map(t => Timestamp(t.toString)).toVector)
+    assert(mcts.data == tm)
+  }
 }
+
 
 /*
 

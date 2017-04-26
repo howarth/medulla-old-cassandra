@@ -2,19 +2,18 @@ package main.scala.store
 
 
 import main.scala.core._
-trait DataStore
+trait DataStore {
+  def dataExists(id : DataId)
+}
 trait ReadableDataStore extends DataStore
 trait WritableDataStore extends DataStore
 
 /* thoughts as I go here
-
 should an ID have the type in it?
-
 is there a way to do something like
 trait ReadableDataStore {
   get[Data][T]
 }
-
 and then implement
 get[Matrix2D][Double]
 and then not write as much?
@@ -61,28 +60,31 @@ trait Matrix2DRWDataStore[T] extends Matrix2DWritableDataStore[T] with Matrix2DR
  TimeSeries
  */
 trait TimeSeriesReadableDataStore[T] extends ReadableDataStore {
-  def getTimeSeries(id : TimeSeriesId) : TimeSeriesData[T]
+  def getFirstTimestamp(id : TimeSeriesId) : Timestamp
+  def getLastTimestamp(id : TimeSeriesId) : Timestamp
+  def getTimes(id : TimeSeriesId) : Vector[Timestamp]
 }
 trait TimeSeriesWritableDataStore[T] extends WritableDataStore {
-  def putTimeSeries(id : TimeSeriesId, data : TimeSeriesData[T]) : Unit
 }
 trait TimeSeriesRWDataStore[T] extends TimeSeriesReadableDataStore[T] with TimeSeriesWritableDataStore[T]
 
-trait SingleChannelTimeSeriesReadableDataStore[T] extends WritableDataStore {
+trait SingleChannelTimeSeriesReadableDataStore[T] extends TimeSeriesReadableDataStore[T]{
   def getSingleChannelTimeSeries(id : SingleChannelTimeSeriesId): SingleChannelTimeSeriesData[T]
+  def getChannel(id : SingleChannelTimeSeriesId) : TimeSeriesChannelId
 }
-trait SingleChannelTimeSeriesWritableDataStore[T] extends {
+trait SingleChannelTimeSeriesWritableDataStore[T] extends TimeSeriesWritableDataStore[T]{
   def putSingleChannelTimeSeries(id : SingleChannelTimeSeriesId, data : SingleChannelTimeSeriesData[T]) : Unit
 }
 trait SingleChannelTimeSeriesRWDataStore[T] extends
   SingleChannelTimeSeriesReadableDataStore[T] with
   SingleChannelTimeSeriesWritableDataStore[T]
 
-trait MultiChannelTimeSeriesReadableDataStore[T] extends ReadableDataStore {
-  def getMultiChannelTimeSeriesStore(id: MultiChannelTimeSeriesId): MultiChannelTimeSeriesData[T]
+trait MultiChannelTimeSeriesReadableDataStore[T] extends TimeSeriesReadableDataStore[T] {
+  def getMultiChannelTimeSeries(id: MultiChannelTimeSeriesId): MultiChannelTimeSeriesData[T]
+  def getChannels(id : MultiChannelTimeSeriesId): Vector[TimeSeriesChannelId]
 }
-trait MultiChannelTimeSeriesWritableDataStore[T] extends WritableDataStore {
-  def putMultiChannelTimeSeriesStore(id: MultiChannelTimeSeriesId, data : MultiChannelTimeSeriesData[T] ): Unit
+trait MultiChannelTimeSeriesWritableDataStore[T] extends TimeSeriesWritableDataStore[T] {
+  def putMultiChannelTimeSeries(id: MultiChannelTimeSeriesId, data : MultiChannelTimeSeriesData[T] ): Unit
 }
 trait MultiChannelTimeSeriesRWDataStore[T] extends
   MultiChannelTimeSeriesReadableDataStore[T] with

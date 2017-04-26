@@ -24,12 +24,35 @@ class CassandraStore(hosts : Seq[String], keySpaceString : String) extends
   override def getMatrix2D(id: Matrix2DId) = DoubleMatrix2DData(db.getDoubleMatrix2D(id.id))
   override def putMatrix2D(id: Matrix2DId, data: Matrix2DData[Double]) = db.putDoubleMatrix2D(id.id, data.data)
 
-  override def getSingleChannelTimeSeries(id: SingleChannelTimeSeriesId) = throw new NotImplementedError
-  override def putSingleChannelTimeSeries(id: SingleChannelTimeSeriesId,
-    data : SingleChannelTimeSeriesData[Double]) = throw new NotImplementedError
+  override def getSingleChannelTimeSeries(id: SingleChannelTimeSeriesId) : SingleChannelTimeSeriesData[Double] = {
+    val chan = db.getChannels(id.id)
+    if(chan.length != 1) throw new Error
+    val bounds = db.getTimeSeriesTimeBounds(id.id)
+    val times : Vector[Timestamp] = db.getTimes(id.id).map(Timestamp(_))
+    val data : Vector[Double] = db.getChannelData(id.id, chan(0), bounds._1, bounds._2)
+    DoubleSingleChannelTimeSeriesData(data, times, TimeSeriesChannelId(chan(0)))
+  }
 
-  override def getMultiChannelTimeSeriesStore(id: MultiChannelTimeSeriesId) = throw new NotImplementedError
-  override def putMultiChannelTimeSeriesStore(id: MultiChannelTimeSeriesId, data: MultiChannelTimeSeriesData[Double]) = ???
+  override def putSingleChannelTimeSeries(id: SingleChannelTimeSeriesId,
+    data : SingleChannelTimeSeriesData[Double]) = {
+    // TODO transaction or try
+    db.putTimeBounds(id.id, data.times.head.underlyingBD, data.times.last.underlyingBD)
+    db.putTimes(id.id, data.times.map(_.underlyingBD))
+    db.putChannels(id.id, List(data.channel.id))
+    db.putChannelData(id.id, data.channel.id, data.times.map(_.underlyingBD), data.data)
+  }
+
+  def dataExists(id: main.scala.core.DataId): Unit = throw new NotImplementedError
+  def getChannels(id: main.scala.core.MultiChannelTimeSeriesId): Vector[main.scala.core.TimeSeriesChannelId] = throw new NotImplementedError
+  def getChannel(id: main.scala.core.SingleChannelTimeSeriesId): main.scala.core.TimeSeriesChannelId = throw new NotImplementedError
+  def getFirstTimestamp(id: main.scala.core.TimeSeriesId): main.scala.core.Timestamp =  throw new NotImplementedError
+  def getLastTimestamp(id: main.scala.core.TimeSeriesId): main.scala.core.Timestamp =  throw new NotImplementedError
+  def getTimes(id: main.scala.core.TimeSeriesId): Vector[main.scala.core.Timestamp] =  throw new NotImplementedError
+
+  override def getMultiChannelTimeSeries(id: MultiChannelTimeSeriesId) = {
+
+  }
+  override def putMultiChannelTimeSeries(id: MultiChannelTimeSeriesId, data: MultiChannelTimeSeriesData[Double]) = throw new NotImplementedError
 }
 
 /*
@@ -100,7 +123,7 @@ case class DoubleChanneledTimeSeriesDataRecord(
                                        value: Double)
 class DoubleChanneledTimeSeriesDataTable extends
   CassandraTable[DoubleChanneledTimeSeriesDataTable, DoubleChanneledTimeSeriesDataRecord] {
-  override val tableName = "double_timeseries_data"
+  override val tableName = "double_channeled_timeseries_data"
   object id extends StringColumn(this) with PartitionKey
   object timestamp extends BigDecimalColumn(this) with PrimaryKey with ClusteringOrder with Ascending
   object channel_name extends StringColumn(this) with PrimaryKey with ClusteringOrder with Ascending
@@ -171,7 +194,7 @@ class CassPhantomDatabase(override val connector : KeySpaceDef) extends Database
   object doubleVectorDataT extends DoubleVectorTable with connector.Connector
   object doubleMatrix2DDataT extends DoubleMatrix2DTable with connector.Connector
 
-  def getTimeSeriesTimeBounds(id : String) : Tuple2[Timestamp, Timestamp] = {
+  def getTimeSeriesTimeBounds(id : String) : Tuple2[BigDecimal, BigDecimal] = {
     val future = timeBoundsT.select.where(_.id eqs id).future()
     val resultRows  = Await.result(future, 10 seconds).all()
     if (resultRows.size() > 1) {
@@ -181,18 +204,18 @@ class CassPhantomDatabase(override val connector : KeySpaceDef) extends Database
       throw new Exception("Expected one time bound for recording id, not found")
     }
     val tb = timeBoundsT.fromRow(resultRows.get(0))
-    Tuple2(Timestamp(tb.start_time.toString), Timestamp(tb.end_time.toString))
+    Tuple2(tb.start_time, tb.end_time)
   }
 
-  def putTimes(id : String, times : Vector[Timestamp]) : Unit =  {
-    timestampsT.insert().value(_.id, id).value(_.times, times.map(_.underlyingBD).toList)
+  def putTimes(id : String, times : Vector[BigDecimal]) : Unit =  {
+    timestampsT.insert().value(_.id, id).value(_.times, times.toList)
       .future().onComplete {
       case Success(e) => ()
       case Failure(e) => throw e
     }
   }
 
-  def getTimes(id : String) : Vector[Timestamp] = {
+  def getTimes(id : String) : Vector[BigDecimal] = {
     val resultRows = Await.result(timestampsT.select.where(_.id eqs id).future(), 10 seconds).all()
     if (resultRows.size() > 1) {
       throw new Exception("Expected one time list for recording id")
@@ -200,15 +223,15 @@ class CassPhantomDatabase(override val connector : KeySpaceDef) extends Database
     if (resultRows.size() == 0) {
       throw new Exception("Expected one time list for recording id, not found")
     }
-    timestampsT.fromRow(resultRows.get(0)).times.map(t => Timestamp(t.toString)).toVector
+    timestampsT.fromRow(resultRows.get(0)).times.toVector
   }
 
   def putTimeBounds(id : String,
-                    startTime : Timestamp, endTime : Timestamp): Unit = {
+                    startTime : BigDecimal, endTime : BigDecimal): Unit = {
     timeBoundsT.insert
       .value(_.id, id)
-      .value(_.start_time, startTime.underlyingBD)
-      .value(_.end_time, endTime.underlyingBD).future().onComplete {
+      .value(_.start_time, startTime)
+      .value(_.end_time, endTime).future().onComplete {
       case Success(e) => ()
       case Failure(e) => throw e
     }
