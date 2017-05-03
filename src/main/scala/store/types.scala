@@ -1,9 +1,20 @@
 package main.scala.store
-
-
 import main.scala.core._
+
+trait DataContext {
+  val dataRegistry : DataRegistry
+  val dataStore : DataStore
+}
+
+trait DataRegistry{
+  def dataIsRegistered(id : DataId) : Boolean
+  def registerData(id : DataId, structMeta : Metadata) : Unit
+  def deleteData(id : DataId)
+  def getMetadata(id : DataId) : Metadata
+}
+
 trait DataStore {
-  def dataExists(id : DataId)
+  //def dataExists(id : DataId) : Boolean
 }
 trait ReadableDataStore extends DataStore
 trait WritableDataStore extends DataStore
@@ -28,6 +39,7 @@ trait ScalarReadableDataStore[T] extends ScalarStore[T] with ReadableDataStore{
 }
 trait ScalarWritableDataStore[T] extends ScalarStore[T] with WritableDataStore{
   def putScalar(id : ScalarId, data : ScalarData[T]) : Unit
+  def deleteScalar(id : ScalarId) : Unit
 }
 trait ScalarRWDataStore[T] extends ScalarReadableDataStore[T] with ScalarWritableDataStore[T]
 
@@ -41,6 +53,7 @@ trait VectorReadableDataStore[T] extends VectorStore[T] with ReadableDataStore{
 }
 trait VectorWritableDataStore[T] extends VectorStore[T] with WritableDataStore{
   def putVector(id : VectorId, data : VectorData[T]) : Unit
+  def deleteVector(id : VectorId) : Unit
 }
 trait VectorRWDataStore[T] extends VectorReadableDataStore[T] with VectorWritableDataStore[T]
 
@@ -53,6 +66,7 @@ trait Matrix2DReadableDataStore[T] extends Matrix2DStore[T] with ReadableDataSto
 }
 trait Matrix2DWritableDataStore[T] extends Matrix2DStore[T] with WritableDataStore{
   def putMatrix2D(id : Matrix2DId, data : Matrix2DData[T]) : Unit
+  def deleteMatrix2D(id : Matrix2DId) : Unit
 }
 trait Matrix2DRWDataStore[T] extends Matrix2DWritableDataStore[T] with Matrix2DReadableDataStore[T]
 
@@ -74,6 +88,7 @@ trait SingleChannelTimeSeriesReadableDataStore[T] extends TimeSeriesReadableData
 }
 trait SingleChannelTimeSeriesWritableDataStore[T] extends TimeSeriesWritableDataStore[T]{
   def putSingleChannelTimeSeries(id : SingleChannelTimeSeriesId, data : SingleChannelTimeSeriesData[T]) : Unit
+  def deleteSingleChannelTimeSeries(id : SingleChannelTimeSeriesId) : Unit
 }
 trait SingleChannelTimeSeriesRWDataStore[T] extends
   SingleChannelTimeSeriesReadableDataStore[T] with
@@ -85,6 +100,7 @@ trait MultiChannelTimeSeriesReadableDataStore[T] extends TimeSeriesReadableDataS
 }
 trait MultiChannelTimeSeriesWritableDataStore[T] extends TimeSeriesWritableDataStore[T] {
   def putMultiChannelTimeSeries(id: MultiChannelTimeSeriesId, data : MultiChannelTimeSeriesData[T] ): Unit
+  def deleteMultiChannelTimeSeries(id : MultiChannelTimeSeriesId) : Unit
 }
 trait MultiChannelTimeSeriesRWDataStore[T] extends
   MultiChannelTimeSeriesReadableDataStore[T] with

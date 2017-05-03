@@ -12,6 +12,7 @@ libraryDependencies += "com.outworkers"  %% "phantom-dsl" % phantomVersion
 libraryDependencies += "com.outworkers"  %% "phantom-connectors" % phantomVersion
 
 libraryDependencies += "org.slf4j" % "slf4j-simple" % "1.6.4"
+libraryDependencies += "org.tpolecat" %% "doobie-core-cats" % "0.4.1" 
 
 
 

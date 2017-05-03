@@ -17,12 +17,15 @@ class CassandraStore(hosts : Seq[String], keySpaceString : String) extends
 
   override def putScalar(id: ScalarId, data: ScalarData[Double]) = db.putDoubleScalar(id.id, data.data)
   override def getScalar(id: ScalarId) : ScalarData[Double] = DoubleScalarData(db.getDoubleScalar(id.id))
+  override def deleteScalar(id: ScalarId) = db.deleteDoubleScalar(id.id)
 
   override def putVector(id: VectorId, data: VectorData[Double]) = db.putDoubleVector(id.id, data.data)
   override def getVector(id: VectorId) = DoubleVectorData(db.getDoubleVector(id.id))
+  override def deleteVector(id: VectorId) = db.deleteDoubleVector(id.id)
 
   override def getMatrix2D(id: Matrix2DId) = DoubleMatrix2DData(db.getDoubleMatrix2D(id.id))
   override def putMatrix2D(id: Matrix2DId, data: Matrix2DData[Double]) = db.putDoubleMatrix2D(id.id, data.data)
+  override def deleteMatrix2D(id: Matrix2DId) = db.deleteDoubleMatrix2D(id.id)
 
   override def getSingleChannelTimeSeries(id: SingleChannelTimeSeriesId) : SingleChannelTimeSeriesData[Double] = {
     val chan = db.getChannels(id.id)
@@ -42,17 +45,45 @@ class CassandraStore(hosts : Seq[String], keySpaceString : String) extends
     db.putChannelData(id.id, data.channel.id, data.times.map(_.underlyingBD), data.data)
   }
 
+  override def deleteSingleChannelTimeSeries(id: SingleChannelTimeSeriesId) = {
+    db.deleteTimeBounds(id.id)
+    db.deleteTimes(id.id)
+    db.deleteChannels(id.id)
+    val chans = db.getChannels(id.id)
+    db.deleteChannelData(id.id, chans(0))
+  }
+
   def dataExists(id: main.scala.core.DataId): Unit = throw new NotImplementedError
   def getChannels(id: main.scala.core.MultiChannelTimeSeriesId): Vector[main.scala.core.TimeSeriesChannelId] = throw new NotImplementedError
   def getChannel(id: main.scala.core.SingleChannelTimeSeriesId): main.scala.core.TimeSeriesChannelId = throw new NotImplementedError
   def getFirstTimestamp(id: main.scala.core.TimeSeriesId): main.scala.core.Timestamp =  throw new NotImplementedError
   def getLastTimestamp(id: main.scala.core.TimeSeriesId): main.scala.core.Timestamp =  throw new NotImplementedError
-  def getTimes(id: main.scala.core.TimeSeriesId): Vector[main.scala.core.Timestamp] =  throw new NotImplementedError
+  def getTimes(id: main.scala.core.TimeSeriesId): Vector[main.scala.core.Timestamp] =  db.getTimes(id.id).map(Timestamp(_))
 
   override def getMultiChannelTimeSeries(id: MultiChannelTimeSeriesId) = {
-
+    val chans = db.getChannels(id.id)
+    val bounds = db.getTimeSeriesTimeBounds(id.id)
+    val times : Vector[Timestamp] = db.getTimes(id.id).map(Timestamp(_))
+    val data : Vector[Vector[Double]] = Vector.tabulate(chans.length)(i => db.getChannelData(id.id, chans(i), bounds._1, bounds._2))
+    DoubleMultiChannelTimeSeriesData(data, times, chans.map(TimeSeriesChannelId(_)).toVector)
   }
-  override def putMultiChannelTimeSeries(id: MultiChannelTimeSeriesId, data: MultiChannelTimeSeriesData[Double]) = throw new NotImplementedError
+  override def putMultiChannelTimeSeries(id: MultiChannelTimeSeriesId, data: MultiChannelTimeSeriesData[Double]) = {
+    // TODO transaction or try
+    db.putTimeBounds(id.id, data.times.head.underlyingBD, data.times.last.underlyingBD)
+    db.putTimes(id.id, data.times.map(_.underlyingBD))
+    db.putChannels(id.id, data.channels.map(_.id).toList)
+    for ((c, d) <- data.channels.zip(data.data)){
+      db.putChannelData(id.id, c.toString, data.times.map(_.underlyingBD), d)
+    }
+  }
+
+  override def deleteMultiChannelTimeSeries(id: MultiChannelTimeSeriesId) = {
+    db.deleteTimeBounds(id.id)
+    db.deleteTimes(id.id)
+    db.deleteChannels(id.id)
+    val chans = db.getChannels(id.id)
+    chans.map(db.deleteChannelData(id.id, _))
+  }
 }
 
 /*
@@ -194,6 +225,17 @@ class CassPhantomDatabase(override val connector : KeySpaceDef) extends Database
   object doubleVectorDataT extends DoubleVectorTable with connector.Connector
   object doubleMatrix2DDataT extends DoubleMatrix2DTable with connector.Connector
 
+  def putTimeBounds(id : String,
+                    startTime : BigDecimal, endTime : BigDecimal): Unit = {
+    timeBoundsT.insert
+      .value(_.id, id)
+      .value(_.start_time, startTime)
+      .value(_.end_time, endTime).future().onComplete {
+      case Success(e) => ()
+      case Failure(e) => throw e
+    }
+  }
+
   def getTimeSeriesTimeBounds(id : String) : Tuple2[BigDecimal, BigDecimal] = {
     val future = timeBoundsT.select.where(_.id eqs id).future()
     val resultRows  = Await.result(future, 10 seconds).all()
@@ -205,6 +247,11 @@ class CassPhantomDatabase(override val connector : KeySpaceDef) extends Database
     }
     val tb = timeBoundsT.fromRow(resultRows.get(0))
     Tuple2(tb.start_time, tb.end_time)
+  }
+
+  def deleteTimeBounds(id : String) : Unit = {
+    val future = timeBoundsT.delete.where(_.id eqs id).future()
+    Await.result(future, 10 seconds)
   }
 
   def putTimes(id : String, times : Vector[BigDecimal]) : Unit =  {
@@ -226,16 +273,10 @@ class CassPhantomDatabase(override val connector : KeySpaceDef) extends Database
     timestampsT.fromRow(resultRows.get(0)).times.toVector
   }
 
-  def putTimeBounds(id : String,
-                    startTime : BigDecimal, endTime : BigDecimal): Unit = {
-    timeBoundsT.insert
-      .value(_.id, id)
-      .value(_.start_time, startTime)
-      .value(_.end_time, endTime).future().onComplete {
-      case Success(e) => ()
-      case Failure(e) => throw e
-    }
+  def deleteTimes(id : String) : Unit = {
+    Await.result(timestampsT.delete.where(_.id eqs id).future(), 10 seconds)
   }
+
 
   def putChannels(id : String, channels : List[String]) : Unit = {
     channelsT.insert.value(_.id, id)
@@ -255,7 +296,11 @@ class CassPhantomDatabase(override val connector : KeySpaceDef) extends Database
       throw new Exception("Expected one channels for recording id, not found")
     }
     channelsT.fromRow(resultRows.get(0)).channel_names
+  }
 
+  def deleteChannels(id : String) : Unit ={
+    val future = channelsT.delete.where(_.id eqs id).future()
+    Await.result(future, 10 seconds)
   }
 
   def putChannelData(id : String, channel : String, times : Vector[BigDecimal], data: Vector[Double]) = {
@@ -271,6 +316,13 @@ class CassPhantomDatabase(override val connector : KeySpaceDef) extends Database
       .and(_.channel_name eqs channel).and(_.timestamp gte startTime).and(_.timestamp lte endTime).orderBy(t => t.timestamp asc).future()
     val resultRows = Await.result(future, 10 seconds).all()
     Vector.tabulate[Double](resultRows.size()){ri => doubleChanneledTimeSeriesDataT.fromRow(resultRows.get(ri)).value}
+  }
+
+  def deleteChannelData(id : String, channel : String) : Unit = {
+    val future = doubleChanneledTimeSeriesDataT.delete
+      .where(_.id eqs id)
+      .and(_.channel_name eqs channel).future()
+    Await.result(future, 10 seconds)
   }
 
   def getDoubleScalar(id : String) : Double = {
@@ -292,6 +344,12 @@ class CassPhantomDatabase(override val connector : KeySpaceDef) extends Database
     }
   }
 
+  def deleteDoubleScalar(id : String) : Unit = {
+    val future = doubleScalarDataT.delete.where(_.id eqs id).future()
+    Await.result(future, 10 seconds)
+  }
+
+
   def getDoubleVector(id: String) : Vector[Double]= {
     val future = doubleVectorDataT.select.where(_.id eqs id).future()
     val resultRows = Await.result(future, 10 seconds).all()
@@ -310,6 +368,11 @@ class CassPhantomDatabase(override val connector : KeySpaceDef) extends Database
       case Success(e) => ()
       case Failure(e) => throw e
     }
+  }
+
+  def deleteDoubleVector(id: String) : Unit = {
+    val future = doubleVectorDataT.select.where(_.id eqs id).future()
+    Await.result(future, 10 seconds)
   }
 
   def getDoubleMatrix2D(id: String) : Vector[Vector[Double]]= {
@@ -337,6 +400,11 @@ class CassPhantomDatabase(override val connector : KeySpaceDef) extends Database
       case Success(e) => ()
       case Failure(e) => throw e
     }
+  }
+
+  def deleteDoubleMatrix2D(id: String) : Unit = {
+    val future = doubleMatrix2DDataT.select.where(_.id eqs id).future()
+    Await.result(future, 10 seconds)
   }
 
 }

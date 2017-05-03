@@ -18,7 +18,78 @@ trait FileType {}
 object FIFFFileType extends FileType
 object BinFileType extends FileType
 
+
+
+
 /*
+class SubjectId(val id: String) extends Id {}
+
+class ExperimentId(val id: String) extends Id {}
+
+class BlockId(val id: String) extends Id {}
+
+// Preprocessing Readable ID
+class ProcessSlugId(val id: String) extends Id {}
+
+class StimuliSetId(val id: String) extends Id {}
+
+class Stimulus(val id: String) {}
+
+
+
+*/
+class RecordingId(val id: String) extends Id {}
+class RecordingChannelId(val id: String) extends Id {}
+
+
+// How do traits extend when there are constructors
+// ESB - Experimental Subject block.
+  /*
+trait ESBRecordingId extends RecordingId(id) {
+  val subjectId : ExperimentId
+  val experimentId : ExperimentID
+  val blockId : BlockId
+  val subjectId : SubjectId
+  val experimentId : ExperimentId
+}
+*/
+// / id - string seperated
+class SimpleESBRecordingId(val id: String)
+{
+  val separatorString = "_"
+  val components = id.split(separatorString)
+  val experiment: String = components(0)
+  val subject: String = components(1)
+  val blockId: String = components(2)
+  def getSubject(): SubjectId = new SubjectId(subject)
+  def getExperiment(): ExperimentId = new ExperimentId(experiment)
+  def getBlock(): BlockId = new BlockId(blockId)
+}
+
+
+class UEL(recordingId: RecordingId, val timestamp: Timestamp) extends Id {
+  val separatorString = ":"
+  override val id = Array(
+    recordingId,
+    timestamp.toString()).mkString(separatorString
+  )
+}
+
+class UNL(
+           val recordingId: RecordingId,
+           val startTime: Timestamp,
+           val endTime: Timestamp)
+  extends Id
+{
+  val separatorString = "-"
+  val identifier =
+    Array(
+      startTime.toString(),
+      endTime.toString()).mkString(separatorString
+    )
+  override val id = identifier
+}
+
 
 trait MetadataContext {
   def getAllRecordings() : Vector[RecordingId]
@@ -41,37 +112,37 @@ trait MetadataContextWAT {
   def getOtherRecordings(experiment: ExperimentId, subject : SubjectId) : Vector[RecordingId]
   def getStimuliSet(experiment : ExperimentId) : StimuliSetId
 
-  def getFirstTimestamp(recording : RecordingId) : Event
-  def getLastTimestamp(recording : RecordingId) : Event
+  //def getFirstTimestamp(recording : RecordingId) : Event
+  //def getLastTimestamp(recording : RecordingId) : Event
 
-  def getObservedEvents(recording : RecordingId) : EventVector
-  def getFixedEvents(recording : RecordingId) : EventVector
+  //def getObservedEvents(recording : RecordingId) : EventVector
+  //def getFixedEvents(recording : RecordingId) : EventVector
 
   def getStimuliToIgnoreOnMatch(experiment : ExperimentId) : Vector[Stimulus]
   /* TODO def getResponseCodes() */
   def getZeroEventStimuli(experiment : ExperimentId) : Vector[Stimulus]
 
-  def getPsychtoolboxStimuliEvents(experiment : ExperimentId,
-                                   subject : SubjectId,
-                                   block : BlockId) : StimulusEventVector
+  //def getPsychtoolboxStimuliEvents(experiment : ExperimentId,
+  //                                 subject : SubjectId,
+  //                                 block : BlockId) : StimulusEventVector
 }
 
 class AlphaFileSystemESBMetadataContext(basePathString : String) extends ESBMetadataContext {
   val basePath: Path = Paths.get(basePathString)
   val recordingsDirPath: Path = basePath.resolve(Paths.get("recordings"))
   val experimentsPath: Path = basePath.resolve("experiments.json")
-  val recordingsPath = (eid: ExperimentId) => recordingsDirPath.resolve(Array(eid.getId, ".json").mkString(""))
+  val recordingsPath = (eid: ExperimentId) => recordingsDirPath.resolve(Array(eid.id, ".json").mkString(""))
   val dataRecordingsKey = "data"
   val otherRecordingsKey = "other"
   val emptyRoomRecordingsKey = "empty_room"
   val eventsDirPath: Path = basePath.resolve("events")
-  val eventsExperimentDirPath: (ExperimentId => Path) = (eid: ExperimentId) => eventsDirPath.resolve(eid.getId)
+  val eventsExperimentDirPath: (ExperimentId => Path) = (eid: ExperimentId) => eventsDirPath.resolve(eid.id)
   val eventsExperimentSubjectDirPath: (ExperimentId, SubjectId) => Path = (eid, sid) => {
-    eventsExperimentDirPath(eid).resolve(sid.getId)
+    eventsExperimentDirPath(eid).resolve(sid.id)
   }
   val ptbPath = (eid: ExperimentId, sid: SubjectId, bid: BlockId) => {
     eventsExperimentSubjectDirPath(eid, sid).resolve(
-      Array(sid.getId, eid.getId, bid.getId, "psychtoolbox.txt").mkString("_")
+      Array(sid.id, eid.id, bid.id, "psychtoolbox.txt").mkString("_")
     )
   }
 
@@ -91,7 +162,7 @@ class AlphaFileSystemESBMetadataContext(basePathString : String) extends ESBMeta
 
   def getSubjectRecordings(experiment: ExperimentId, subject: SubjectId, key: String): JsValue =
     loadJson(recordingsPath(experiment)).asOpt[Map[String, JsValue]] match {
-      case Some(sub2recs) => sub2recs(subject.getId).asOpt[Map[String, JsValue]] match {
+      case Some(sub2recs) => sub2recs(subject.id).asOpt[Map[String, JsValue]] match {
         case Some(recType2recs) =>
           try {
             recType2recs(key)
@@ -157,13 +228,6 @@ class AlphaFileSystemESBMetadataContext(basePathString : String) extends ESBMeta
   def getStimuliSet(experiment: ExperimentId): StimuliSetId =
     throw new NotImplementedError()
 
-  def getFirstTimestamp(recording: RecordingId): Event = throw new NotImplementedError
-
-  def getLastTimestamp(recording: RecordingId): Event = throw new NotImplementedError
-
-  def getObservedEvents(recording: RecordingId): EventVector = null
-
-  def getFixedEvents(recording: RecordingId): EventVector = null
 
   def getStimuliToIgnoreOnMatch(experiment: ExperimentId): Vector[Stimulus] = null
 
@@ -172,6 +236,7 @@ class AlphaFileSystemESBMetadataContext(basePathString : String) extends ESBMeta
 
   val _orderedCharsets = Array(StandardCharsets.US_ASCII, StandardCharsets.ISO_8859_1)
 
+  /*
   def getPsychtoolboxStimuliEvents(experiment: ExperimentId,
                                    subject: SubjectId,
                                    block: BlockId): StimulusEventVector = {
@@ -205,6 +270,7 @@ class AlphaFileSystemESBMetadataContext(basePathString : String) extends ESBMeta
     }
     throw new MalformedInputException(1)
   }
+  */
 }
 
 
@@ -217,11 +283,11 @@ trait FSDataLocator {
 object AlphaRecordingIdParser {
   val separator = "_"
   def parse(recording : RecordingId) : (ExperimentId, SubjectId, BlockId) = {
-    val Array(experiment, subject, block) = recording.getId.split(separator)
+    val Array(experiment, subject, block) = recording.id.split(separator)
     (new ExperimentId(experiment), new SubjectId(subject), new BlockId(block))
   }
   def combine(experiment : ExperimentId)(subject : SubjectId)(
-              block: BlockId) : RecordingId = new RecordingId(Array(experiment, subject, block).map(id => id.getId).mkString(separator))
+              block: BlockId) : RecordingId = new RecordingId(Array(experiment, subject, block).map(id => id.id).mkString(separator))
 }
 
 class AlphaFIFFSDataLocator(basePathString : String) extends FSDataLocator{
@@ -231,21 +297,21 @@ class AlphaFIFFSDataLocator(basePathString : String) extends FSDataLocator{
 
   def getFilename(experiment : ExperimentId, subject : SubjectId, block : BlockId,
                   processSlug : ProcessSlugId) : String = {
-    val ending = processSlug.getId match {
+    val ending = processSlug.id match {
       case "raw" => "raw.fif"
       case ps : String => Array(ps, "raw.fif").mkString("_")
     }
-    Array(subject.getId, experiment.getId, block.getId, ending).mkString("_")
+    Array(subject.id, experiment.id, block.id, ending).mkString("_")
   }
 
-  def getExperimentDirectory(experiment : ExperimentId) : Path = basePath.resolve(experiment.getId)
+  def getExperimentDirectory(experiment : ExperimentId) : Path = basePath.resolve(experiment.id)
 
   def getProcessedDirectory(experiment : ExperimentId, processSlug : ProcessSlugId) : Path =
-    getExperimentDirectory(experiment).resolve(dataDirString).resolve(processSlug.getId)
+    getExperimentDirectory(experiment).resolve(dataDirString).resolve(processSlug.id)
 
   def getSubjectDirectory(experiment : ExperimentId, subject : SubjectId,
                           processSlug: ProcessSlugId) : Path =
-    getProcessedDirectory(experiment, processSlug).resolve(subject.getId)
+    getProcessedDirectory(experiment, processSlug).resolve(subject.id)
 
   def getRecordingLocation(recording : RecordingId, processSlug : ProcessSlugId) : Path = {
     val (eid : ExperimentId, sid : SubjectId, bid : BlockId) = AlphaRecordingIdParser.parse(recording)
@@ -263,8 +329,8 @@ class AlphaBinDataLocator(basePathString : String)  extends AlphaFIFFSDataLocato
 
   def getFilename(experiment : ExperimentId, subject : SubjectId, block : BlockId,
                            processSlug : ProcessSlugId, channel: RecordingChannelId) : String = {
-    val ending = Array(processSlug.getId, ".bin").mkString
-    Array(subject.getId, experiment.getId, block.getId, channel.getId, ending).mkString("_")
+    val ending = Array(processSlug.id, ".bin").mkString
+    Array(subject.id, experiment.id, block.id, channel.id, ending).mkString("_")
   }
 
   override def getRecordingLocation(recording : RecordingId, processSlug : ProcessSlugId) : Path =
@@ -273,14 +339,14 @@ class AlphaBinDataLocator(basePathString : String)  extends AlphaFIFFSDataLocato
   override def getRecordingChannelLocation(recording : RecordingId, processSlug : ProcessSlugId,
                                   channel : RecordingChannelId) : Path = {
     val (eid : ExperimentId, sid : SubjectId, bid : BlockId) = AlphaRecordingIdParser.parse(recording)
-    getSubjectDirectory(eid, sid, processSlug).resolve(bid.getId).resolve(getFilename(eid,sid,bid,processSlug, channel))
+    getSubjectDirectory(eid, sid, processSlug).resolve(bid.id).resolve(getFilename(eid,sid,bid,processSlug, channel))
   }
 }
 
 trait TimeseriesDataContext{
   def dataExists(dataId : DataId) : Boolean
 }
-
+/*
 trait ReadableChanneledTimeseriesDataContext extends TimeseriesDataContext {
   def getStartTime(dataId : DataId) : Timestamp
   def getEndTime(dataId : DataId) : Timestamp
@@ -288,21 +354,24 @@ trait ReadableChanneledTimeseriesDataContext extends TimeseriesDataContext {
   def getChannelData(dataId : DataId, channelId : ChannelId)
 
 }
+*/
 
-trait ReadableRecordingDataContext extends RecordingDataContext {
+trait ReadableRecordingDataContext  {
   def getStartTime(recording : RecordingId, processSlug : ProcessSlugId) : Timestamp
   def getEndTime(recording : RecordingId, processSlug : ProcessSlugId) : Timestamp
   def getChannels(recording : RecordingId, processSlug : ProcessSlugId) : Vector[RecordingChannelId]
-  def getChannelData(recording : RecordingId, processSlug : ProcessSlugId, channel : RecordingChannelId): SingleChannelTimeseries
-  def getDataFromUNL(unl : UNL, processSlug : ProcessSlugId) : MultiChannelTimeseries
-  def getChannelDataFromUNL(unl : UNL, channel : RecordingChannelId) : SingleChannelTimeseries
-  def getMultiChannelDataFromUNL( unl : UNL, channels : Vector[RecordingChannelId]) : MultiChannelTimeseries
+//  def getChannelData(recording : RecordingId, processSlug : ProcessSlugId, channel : RecordingChannelId): SingleChannelTimeSeriesData
+//  def getDataFromUNL(unl : UNL, processSlug : ProcessSlugId) : MultiChannelTimeSeriesData
+//  def getChannelDataFromUNL(unl : UNL, channel : RecordingChannelId) : SingleChannelTimeseriesData
+//  def getMultiChannelDataFromUNL( unl : UNL, channels : Vector[RecordingChannelId]) : MultiChannelTimeseries
   def getTimes(recording : RecordingId, processSlug : ProcessSlugId) : Vector[Timestamp]
 }
-trait WritableRecordingDataContext extends RecordingDataContext {
+  /*
+trait WritableRecordingDataContext  {
   def putData( recording : RecordingId, processSlug : ProcessSlugId, data : MultiChannelTimeseries) : Unit
   def putChannelData( recording : RecordingId, processSlug : ProcessSlugId, data : SingleChannelTimeseries) : Unit
 }
+*/
 
 abstract class FSDataContext(fsLocator : FSDataLocator) extends ReadableRecordingDataContext {
   def recordingExists(recording : RecordingId, processSlug : ProcessSlugId) : Boolean =
@@ -314,13 +383,14 @@ class FIFDataContext(fsLocator : FSDataLocator) extends FSDataContext(fsLocator)
   def getStartTime(recording : RecordingId, processSlug : ProcessSlugId) : Timestamp = throw new Exception("Doesn't exist for FIF yet")
   def getEndTime(recording : RecordingId, processSlug : ProcessSlugId) : Timestamp = throw new Exception("Doesn't exist for FIF yet")
   def getChannels(recording : RecordingId, processSlug : ProcessSlugId) : Vector[RecordingChannelId] = throw new Exception("Doesn't exist for FIF yet")
-  def getChannelData(recording: RecordingId, processSlug: ProcessSlugId, channel : RecordingChannelId) :SingleChannelTimeseries = throw new Exception("no fif")
-  def getDataFromUNL(unl : UNL, processSlug : ProcessSlugId) : MultiChannelTimeseries = throw new Exception("Doesn't exist for FIF yet")
-  def getChannelDataFromUNL( unl : UNL, channel : RecordingChannelId) : SingleChannelTimeseries = throw new Exception("Doesn't exist for FIF yet")
-  def getMultiChannelDataFromUNL(unl : UNL, channels : Vector[RecordingChannelId]) : MultiChannelTimeseries = throw new Exception("Doesn't exist for FIF yet")
+  //def getChannelData(recording: RecordingId, processSlug: ProcessSlugId, channel : RecordingChannelId) :SingleChannelTimeseries = throw new Exception("no fif")
+  //def getDataFromUNL(unl : UNL, processSlug : ProcessSlugId) : MultiChannelTimeseries = throw new Exception("Doesn't exist for FIF yet")
+  //def getChannelDataFromUNL( unl : UNL, channel : RecordingChannelId) : SingleChannelTimeseries = throw new Exception("Doesn't exist for FIF yet")
+  //def getMultiChannelDataFromUNL(unl : UNL, channels : Vector[RecordingChannelId]) : MultiChannelTimeseries = throw new Exception("Doesn't exist for FIF yet")
   def getTimes(recording : RecordingId, processSlug : ProcessSlugId) : Vector[Timestamp] = throw new Exception("Doesn't exist for FIF yet")
 }
 
+/*
 class BinDataContext(fsLocator : BinFSDataLocator) extends FSDataContext(fsLocator) {
   val timeChan = new RecordingChannelId("time")
   private val channelsChan = new RecordingChannelId("channels")
@@ -555,7 +625,7 @@ class CassandraRecordingDataContext(hosts : Seq[String], keySpace: String) exten
   def getChannelData(recording : RecordingId, processSlug : ProcessSlugId, channel : RecordingChannelId) : SingleChannelTimeseries = {
     val (start_t, end_t) : (Timestamp, Timestamp) = db.getTimeBounds(recording.toString, processSlug.toString)
     val unl = new UNL(recording, start_t, end_t)
-    val data : Vector[Double] = db.getChannelData(recording.getId,processSlug.getId,channel.getId,start_t._underlyingDB, end_t._underlyingDB)
+    val data : Vector[Double] = db.getChannelData(recording.id,processSlug.id,channel.id,start_t._underlyingDB, end_t._underlyingDB)
     val times : Vector[Timestamp] = getTimes(recording, processSlug)
     new SingleChannelTimeseries(data, times, channel)
   }
@@ -563,7 +633,7 @@ class CassandraRecordingDataContext(hosts : Seq[String], keySpace: String) exten
   def getDataFromUNL(unl : UNL, processSlug : ProcessSlugId) : MultiChannelTimeseries = {
     val chans = getChannels(unl.recordingId, processSlug);
     val data = Vector.tabulate[Vector[Double]](chans.length)(ci =>
-      db.getChannelData(unl.recordingId.getId,processSlug.getId,chans(ci).getId,unl.startTime._underlyingDB, unl.endTime._underlyingDB)
+      db.getChannelData(unl.recordingId.id,processSlug.id,chans(ci).id,unl.startTime._underlyingDB, unl.endTime._underlyingDB)
     )
     val times = getTimes(unl.recordingId, processSlug)
     new MultiChannelTimeseries(data, times, chans)
@@ -574,7 +644,7 @@ class CassandraRecordingDataContext(hosts : Seq[String], keySpace: String) exten
   def getMultiChannelDataFromUNL( unl : UNL, channels : Vector[RecordingChannelId]) : MultiChannelTimeseries = throw new NotImplementedError()
 
   def getTimes(recording : RecordingId, processSlug : ProcessSlugId) : Vector[Timestamp] = {
-    db.getTimes(recording.getId)
+    db.getTimes(recording.id)
   }
 
   def putChannelData( recording : RecordingId, processSlug : ProcessSlugId, data : SingleChannelTimeseries) : Unit = {
